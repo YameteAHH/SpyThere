@@ -1,0 +1,183 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  color: beige;
+}
+
+body {
+  background-color: rgba(0, 0, 0, 1);
+}
+
+.header {
+  display: flex;
+  align-items: stretch;
+  background-color: rgb(15, 13, 13);
+  padding: 0;
+  /* Remove padding so logo can touch edges */
+  height: 50px;
+  /* Set header height */
+}
+
+.logo {
+  width: 55px;
+  height: 100%;
+  display: block;
+  background-color: rgb(15, 13, 13);
+  /* Visible fallback if image doesn't load */
+}
+
+#title {
+  background-color: rgb(15, 13, 13);
+  color: white;
+  font-size: 24px;
+  padding: 10px;
+}
+
+/* this is the space around the lists of posts */
+.todo-container {
+  margin: 20px;
+  padding: 1px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.todo-container ul {
+  list-style: none;
+  padding: 5px;
+
+}
+
+/* this is the lists of post itself ⌨*/
+.todo-container li {
+  background-color: #000000;
+  padding: 10px;
+  border-radius: 20px;
+  border: 1px solid blanchedalmond;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+  font-size: 18px;
+  font-family: sans-serif;
+
+}
+
+/* Layout */
+.app-layout {
+  display: flex;
+  height: calc(100vh - 60px);
+  /* Adjust height minus header */
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  background-color: rgb(15, 13, 13);
+  color: white;
+  padding: 10px 20px;
+  height: 60px;
+}
+
+.logo {
+  width: 50px;
+  height: auto;
+  margin-right: 15px;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 50px;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 40px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+#add-post-btn {
+  width: 30px;
+  height: 30px;
+  font-size: 18px;
+  color: white;
+  background-color: crimson;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.main-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.img-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.add-img {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+}
+
+/* modal */
+
+.main-content #post-modal {
+  display: none;
+  background-color: rgba(0, 0, 0, 0.5);
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+}
+
+.main-content #post-modal #modal-content {
+  position: relative;
+  margin: 15% auto;
+  padding: 1rem;
+  border: 1px solid rgb(97, 97, 97);
+  border-radius: .5rem;
+  width: 90%;
+  max-width: 500px;
+}
+
+.main-content #post-modal #modal-content #modal-btns .modal-btn {
+  background-color: rgb(15, 13, 13);
+  padding: 0.5rem 1.2rem;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.main-content #post-modal #modal-content #modal-btns {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: end;
+  gap: 1rem;
+}
+
+.main-content #post-modal #modal-content textarea {
+  width: 100%;
+  height: 10rem;
+  border: none;
+  resize: none;
+  padding: 1rem;
+  font-size: 1rem;
+  border-radius: 0.5rem;
+  background-color: rgb(15, 13, 13);
+  color: white;
+}
