@@ -1,18 +1,13 @@
 import express from 'express';
 import { initializeApp } from 'firebase/app';
-import { get, push, getDatabase, ref } from 'firebase/database';
+import { getDatabase, ref, set, push, get, child } from 'firebase/database';
 
-// Express setup
 const app = express();
 const port = 3000;
 
-// Set EJS as the view engine
+// Middleware
 app.set('view engine', 'ejs');
-
-// Static files (CSS, images, etc.) will be served from the 'public' folder
 app.use(express.static('public'));
-
-// Middleware to parse form data
 app.use(express.urlencoded({ extended: true }));
 
 // Firebase configuration
@@ -23,85 +18,120 @@ const firebaseConfig = {
 // Initialize Firebase
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getDatabase(firebaseApp);
-const dbRef = ref(db, 'posts');
+const postsRef = ref(db, 'posts');
 
-// Dummy login credentials (for simplicity)
-const user = {
-  email: 'christina-admin11',
-  password: 'admin1234',
-};
-
-// Store logged-in user session in memory (simplified version)
+// User credentials in memory (temporary login session)
 const userInputCredentials = {
   email: '',
   password: '',
 };
 
-// Auth middleware to protect routes
+// Middleware for authentication
 function authenticator(req, res, next) {
-  if (
-    userInputCredentials.email === user.email &&
-    userInputCredentials.password === user.password
-  ) {
-    next(); // User is authenticated, proceed to the next middleware/route
+  if (userInputCredentials.email && userInputCredentials.password) {
+    next();
   } else {
-    res.redirect('/login'); // Redirect to login page if not authenticated
+    res.redirect('/login');
   }
 }
 
-// 📑 Opening Page (Main Entry Point)
+// Routes
+
+// 📑 Opening Page
 app.get('/', (req, res) => {
   res.render('opening_page.ejs');
 });
 
-// 📑 Login Page (GET Request)
+// 📑 Login Page (GET)
 app.get('/login', (req, res) => {
-  res.render('log_in.ejs');
+  res.render('log_in.ejs', { error: null });
 });
 
-// 📑 Login Handling (POST Request)
-app.post('/login', (req, res) => {
+// 📤 Login Handler (POST)
+app.post('/login', async (req, res) => {
   const { email, password } = req.body;
-  if (email === user.email && password === user.password) {
-    userInputCredentials.email = email;
-    userInputCredentials.password = password;
-    res.redirect('/home'); // Redirect to home page after successful login
-  } else {
-    res.render('log_in.ejs', { error: 'Invalid credentials' }); // Show error if credentials are invalid
+
+  try {
+    const sanitizedEmail = email.replace(/\./g, '_');
+    const userRef = child(ref(db, 'users'), sanitizedEmail);
+    const snapshot = await get(userRef);
+
+    if (snapshot.exists()) {
+      const userData = snapshot.val();
+      if (userData.password === password) {
+        userInputCredentials.email = email;
+        userInputCredentials.password = password;
+        return res.redirect('/home');
+      }
+    }
+
+    res.render('log_in.ejs', { error: 'Invalid email or password' });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).send('Server error during login');
   }
 });
 
-// 📑 Sign Up Page (GET Request)
+// 📑 Sign Up Page (GET)
 app.get('/signup', (req, res) => {
   res.render('sign_up.ejs');
+});
+
+// 📤 Sign Up Handler (POST)
+app.post('/signup', async (req, res) => {
+  const { username, email, password } = req.body;
+
+  if (!username || !email || !password) {
+    return res.status(400).send('All fields are required.');
+  }
+
+  try {
+    const sanitizedEmail = email.replace(/\./g, '_');
+    const userRef = child(ref(db, 'users'), sanitizedEmail);
+
+    await set(userRef, {
+      username,
+      email,
+      password,
+    });
+
+    res.redirect('/login');
+  } catch (error) {
+    console.error('Error saving user:', error);
+    res.status(500).send('Something went wrong while signing up.');
+  }
 });
 
 // 📑 Home Page (Requires login)
 app.get('/home', authenticator, async (req, res) => {
   try {
-    const snapshot = await get(dbRef);
+    const snapshot = await get(postsRef);
     let posts = [];
+
     if (snapshot.exists()) {
       const data = snapshot.val();
       posts = Object.entries(data).map(([id, value]) => ({ id, value })).reverse();
     }
-    res.render('home_page.ejs', { posts }); // Render the home page with posts
+
+    res.render('home_page.ejs', { posts });
   } catch (error) {
-    console.error("Error fetching posts:", error);
-    res.status(500).send('Error fetching posts');
+    console.error('Error fetching posts:', error);
+    res.status(500).send('Error fetching posts.');
   }
 });
 
-// 📑 Post Submission (POST Request)
+// 📤 Submit Post
 app.post('/submit-post', (req, res) => {
   const post = req.body.post;
+
   if (post && post.trim() !== '') {
-    push(dbRef, post.trim()); // Push the post to Firebase
+    push(postsRef, post.trim());
   }
-  res.redirect('/home'); // Redirect back to home after submitting a post
+
+  res.redirect('/home');
 });
 
-// 📑 Profile Page (Requires login)
+// 📑 Profile Page
 app.get('/profile', authenticator, (req, res) => {
   res.render('profile_page.ejs');
 });

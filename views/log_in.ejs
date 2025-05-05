@@ -14,14 +14,21 @@
             <form class="login" action="/login" method="post">
                 <div class="login-form">
                     <h1 id="login">LOG IN</h1>
+
+                    <% if (typeof error !== 'undefined' && error) { %>
+                        <p style="color: red; font-weight: bold;"><%= error %></p>
+                    <% } %>
+
                     <div id="email-form" class="p-e-form">
                         <label for="email">Email:</label>
-                        <input type="text" name="email" id="email">
+                        <input type="email" name="email" id="email" required>
                     </div>
+
                     <div id="password-form" class="p-e-form">
                         <label for="password">Password:</label>
-                        <input type="password" name="password" required>
+                        <input type="password" name="password" id="password" required>
                     </div>
+
                     <input class="polygon-shape" type="submit" value="SPY">
                 </div>
             </form>
