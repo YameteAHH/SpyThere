@@ -4,54 +4,46 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SpyThere</title>
+  <title>SpyThere - Home</title>
   <link rel="stylesheet" href="home_page.css">
 </head>
 
 <body>
-  <!-- Header at the top -->
-  <header class="header">
-    <img src="assets/SpiderAtHeader.png" class="logo" alt="Logo">
-    <h1 id="title">SpyThere</h1>
-  </header>
+
+  <!-- Include Header -->
+  <%- include('partials/header') %>
 
   <!-- Page layout: Sidebar + Main Content -->
   <div class="app-layout">
-    <!-- Navigation Sidebar -->
-    <nav class="sidebar">
-      <div id="btn-nav">
-        <a href="#">
-          <img src="assets/Profile_Button.png" alt="Profile" class="profile-icon">
-        </a>
-      </div>
-      <button type="submit" id="add-post-btn">+</button>
-    </nav>
 
-    <!-- Main Content -->
-    <main class="main-content">
-      <!-- Modal -->
-      <div id="post-modal">
-        <div id="modal-content">
-          <form action="/submit-post" method="post" id="post-form">
-            <h1>New Post</h1>
-            <textarea name="post" id="post" placeholder="What's on your mind..."></textarea>
-            <div id="modal-btns">
-              <button id="close-modal-btn" class="modal-btn">Cancel</button>
-              <input type="submit" value="Post" id="post-content-btn" class="modal-btn">
-            </div>
-          </form>
-        </div>
-      </div>
+    <!-- Include Sidebar (Navbar) -->
+    <%- include('partials/navbar') %>
+
+    <!-- Main Content Section -->
+    <div class="main-content">
+      <h2>Spy Here!</h2>
+
+      <!-- Todo List Section -->
       <div class="todo-container">
         <ul>
-          <% posts.forEach(post=> { %>
-            <li>
-              <%= post.value %>
-            </li>
-            <% }) %>
+          <% posts.forEach(post => { %>
+            <li><%= post.value %></li>
+          <% }) %>
         </ul>
       </div>
-    </main>
+
+      <!-- Modal for Adding Post -->
+      <div id="post-modal">
+        <div id="modal-content">
+          <h3>Add Post</h3>
+          <textarea id="post-textarea" placeholder="Write your post..."></textarea>
+          <div id="modal-btns">
+            <button class="modal-btn" id="cancel-btn">Cancel</button>
+            <button class="modal-btn" id="submit-post-btn">Submit</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
   <script src="/scripts/index.js"></script>
 </body>

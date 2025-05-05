@@ -1,76 +1,18 @@
+/* === Reset === */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  color: beige;
 }
 
 body {
   background-color: rgba(0, 0, 0, 1);
-}
-
-.header {
-  display: flex;
-  align-items: stretch;
-  background-color: rgb(15, 13, 13);
-  padding: 0;
-  /* Remove padding so logo can touch edges */
-  height: 50px;
-  /* Set header height */
-}
-
-.logo {
-  width: 55px;
-  height: 100%;
-  display: block;
-  background-color: rgb(15, 13, 13);
-  /* Visible fallback if image doesn't load */
-}
-
-#title {
-  background-color: rgb(15, 13, 13);
-  color: white;
-  font-size: 24px;
-  padding: 10px;
-}
-
-/* this is the space around the lists of posts */
-.todo-container {
-  margin: 20px;
-  padding: 1px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.todo-container ul {
-  list-style: none;
-  padding: 5px;
-
-}
-
-/* this is the lists of post itself ⌨*/
-.todo-container li {
-  background-color: #000000;
-  padding: 10px;
-  border-radius: 20px;
-  border: 1px solid blanchedalmond;
-  margin-bottom: 15px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-  font-size: 18px;
+  color: beige;
   font-family: sans-serif;
-
 }
 
-/* Layout */
-.app-layout {
-  display: flex;
-  height: calc(100vh - 60px);
-  /* Adjust height minus header */
-}
-
-/* Header */
-.header {
+/* === Header === */
+header.header {
   display: flex;
   align-items: center;
   background-color: rgb(15, 13, 13);
@@ -79,14 +21,25 @@ body {
   height: 60px;
 }
 
-.logo {
+header.header .logo {
   width: 50px;
   height: auto;
   margin-right: 15px;
 }
 
-/* Sidebar */
-.sidebar {
+header.header #title {
+  font-size: 24px;
+  background-color: rgb(15, 13, 13);
+}
+
+/* === App Layout === */
+.app-layout {
+  display: flex;
+  height: calc(100vh - 60px); /* Adjust for header */
+}
+
+/* === Sidebar (Navbar) === */
+nav.sidebar {
   width: 50px;
   background-color: rgba(0, 0, 0, 0.5);
   padding: 40px 10px;
@@ -113,28 +66,63 @@ body {
   cursor: pointer;
 }
 
+/* Web Button */
+.web-btn-wrapper {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.web-icon {
+  width: 38px;
+  height: 38px;
+}
+
+/* Logout Button */
+.logout-wrapper {
+  margin-top: auto;
+  display: flex;
+  justify-content: center;
+  padding-top: 20px;
+}
+
+.logout-icon {
+  width: 30px;
+  height: 30px;
+}
+
+/* === Main Content === */
 .main-content {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
 }
 
-.img-btn {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
+/* Todo List Section */
+.todo-container {
+  margin: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
-.add-img {
-  width: 50px;
-  height: 50px;
-  object-fit: contain;
+.todo-container ul {
+  list-style: none;
+  padding: 5px;
 }
 
-/* modal */
+.todo-container li {
+  background-color: #000000;
+  padding: 10px;
+  border-radius: 20px;
+  border: 1px solid blanchedalmond;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+  font-size: 18px;
+}
 
-.main-content #post-modal {
+/* === Modal === */
+#post-modal {
   display: none;
   background-color: rgba(0, 0, 0, 0.5);
   position: fixed;
@@ -145,32 +133,35 @@ body {
   z-index: 1000;
 }
 
-.main-content #post-modal #modal-content {
+#modal-content {
   position: relative;
   margin: 15% auto;
   padding: 1rem;
   border: 1px solid rgb(97, 97, 97);
-  border-radius: .5rem;
+  border-radius: 0.5rem;
   width: 90%;
   max-width: 500px;
+  background-color: #000;
 }
 
-.main-content #post-modal #modal-content #modal-btns .modal-btn {
+#modal-btns {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.modal-btn {
   background-color: rgb(15, 13, 13);
   padding: 0.5rem 1.2rem;
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
+  color: white;
 }
 
-.main-content #post-modal #modal-content #modal-btns {
-  margin-top: 1rem;
-  display: flex;
-  justify-content: end;
-  gap: 1rem;
-}
-
-.main-content #post-modal #modal-content textarea {
+/* Text Input */
+textarea {
   width: 100%;
   height: 10rem;
   border: none;
@@ -181,3 +172,4 @@ body {
   background-color: rgb(15, 13, 13);
   color: white;
 }
+

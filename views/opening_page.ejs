@@ -1,12 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log in or Sign Up or Spy</title>
-    <link rel="stylesheet" href="opening_page.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Opening Page</title>
+  <link rel="stylesheet" href="/opening_page.css" />
 </head>
 <body>
-    <h1>Sign up or log in</h1>
+  <h1>Are you ready to SpyThere</h1>
+  <div class="button-container">
+    <form action="/login" method="get">
+      <button class="login-btn">Login</button></form>
+    <form action="/home" method="get">
+      <button class="spy-btn">Spy</button>
+    </form>
+    <form action="/signup" method="get">
+      <button class="signup-btn">Sign Up</button>
+    </form>
+  </div>
 </body>
 </html>

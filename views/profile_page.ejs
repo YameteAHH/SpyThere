@@ -1,13 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpyThere</title>
+  <link rel="stylesheet" href="/home_page.css">
 </head>
 <body>
-    <h1>Spy
-        
-    </h1>
+
+  <!-- Header -->
+  <%- include('partials/header') %>
+
+  <div class="app-layout">
+    <!-- Navbar -->
+    <%- include('partials/navbar') %>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Modal -->
+      <div id="post-modal">
+        <div id="modal-content">
+          <form action="/submit-post" method="post" id="post-form">
+            <h1>New Post</h1>
+            <textarea name="post" id="post" placeholder="What's on your mind..."></textarea>
+            <div id="modal-btns">
+              <button id="close-modal-btn" class="modal-btn" type="button">Cancel</button>
+              <input type="submit" value="Post" id="post-content-btn" class="modal-btn">
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Posts List -->
+      <div class="todo-container">
+        <ul>
+          <% if (typeof posts !== 'undefined' && posts.length > 0) { %>
+            <% posts.forEach(post => { %>
+              <li><%= post.value %></li>
+            <% }) %>
+          <% } else { %>
+            <li>No posts to show.</li>
+          <% } %>
+        </ul>
+      </div>
+    </main>
+  </div>
+
+  <script src="/scripts/index.js"></script>
 </body>
 </html>

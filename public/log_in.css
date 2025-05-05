@@ -3,26 +3,59 @@
     padding: 0;
     text-decoration: none;
     box-sizing: border-box;
-}
-
-main section {
+    border-radius: 8px;
+    
+  }
+  
+  main section {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-}
-
-main section .login-form {
+  }
+  
+  main section .login-form {
     position: relative;
-    margin: 18% auto;
+    margin: 20% auto;
     display: flex;
     flex-direction: column;
     width: 15%;
     gap: 1rem;
-}
-
-main section .login-form .p-e-form {
+  }
+  
+  main section .login-form .p-e-form {
     display: flex;
     flex-direction: column;
-}
+  }
+  
+  body {
+   margin: 0;
+   height: 100vh;
+   display: flex;
+   justify-content: center;
+   align-items: center;   
+   background: pink;   
+  }
+  
+  main section .login .login-form{
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   flex-direction: column;
+  }
+  
+  .polygon-shape {
+   width: 60px;
+   height: 60px;
+   background: black; 
+   border-radius: 0;
+   clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   color: white; 
+   font-weight: bold;
+   font-size: 14px;
+  }
+  
