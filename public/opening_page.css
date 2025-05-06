@@ -1,45 +1,68 @@
 body {
-    font-family: sans-serif;
-    text-align: center;
-    padding-top: 100px;
-    background-color: #f5f5f5;
-  }
-  
-  h1 {
-    margin-bottom: 50px;
-  }
-  
-  .button-container {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-  }
-  
-  button {
-    padding: 15px 30px;
-    font-size: 18px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
-  
-  .login-btn {
-    background-color: #007BFF;
-    color: white;
-  }
-  
-  .spy-btn {
-    background-color: #28a745;
-    color: white;
-  }
-  
-  .signup-btn {
-    background-color: #ffc107;
-    color: black;
-  }
-  
-  button:hover {
-    opacity: 0.9;
-  }
+  font-family: sans-serif;
+  text-align: center;
+  padding-top: 100px;
+  background-color: #f5f5f5;
+}
+
+h1 {
+  margin-bottom: 50px;
+}
+
+.button-container {
+  display: flex;
+  justify-content: center;
+  gap: 0px;  /* Ensure no space between buttons */
+  margin: 0;  /* Make sure there's no extra margin in the container */
+}
+
+.polygon-shape {
+  width: 120px;
+  height: 100px;
+  border: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.3s ease-in-out; /* Smooth transition for both background and transform */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.login-btn {
+  background: #F94F60;
+  clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
+  margin-right: -5px;  /* Negative margin to pull it closer */
+}
+
+.login-btn:hover {
+  filter: brightness(85%); /* Darken the button */
+  transform: translateY(-4px);
+}
+
+.spy-btn {
+  background: #000000;
+  width: 120px;
+  height: 100px;
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+  margin-left: -5px;  /* Negative margin to pull it closer */
+}
+
+.spy-btn:hover {
+  filter: brightness(85%); /* Darken the button */
+  transform: translateY(-4px);
+}
+
+.signup-btn {
+  background: #F94F60;
+  clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
+  margin-left: -5px;  /* Negative margin to pull it closer */
+}
+
+.signup-btn:hover {
+  filter: brightness(85%); /* Darken the button */
+  transform: translateY(-4px);
+}
   
