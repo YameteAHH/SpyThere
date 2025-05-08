@@ -1,0 +1,79 @@
+/* General styling */
+body {
+    background-color: #ff5a5f;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    color: white;
+}
+
+/* Header styling */
+h1 {
+    margin-top: 50px;
+}
+
+/* Form styling */
+form {
+    display: inline-block;
+    margin-top: 20px;
+}
+
+div {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+    width: 200px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* Button styling (matching the opening page) */
+.spy-button {
+    background-color: #333;
+    color: white;
+    padding: 15px 30px; /* Adjusting padding for a more prominent button */
+    border: none;
+    border-radius: 5px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.spy-button:hover {
+    background-color: #555;
+}
+
+/* Link styling */
+p {
+    margin-top: 20px;
+}
+
+a {
+    color: #333;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Spider image styling */
+.spider-container {
+    margin-top: 20px;
+}
+
+.spider-img {
+    width: 200  px; /* Adjust based on your layout */
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
