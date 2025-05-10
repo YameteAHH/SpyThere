@@ -27,21 +27,27 @@
       <div class="todo-container">
         <ul>
           <% posts.forEach(post => { %>
-            <li><%= post.value %></li>
+            <li>
+              <strong>
+                <%= post.value.username || "Anonymous" %>
+              </strong>
+              <%= post.value.content || post.value %>
+            </li>
           <% }) %>
         </ul>
       </div>
 
       <!-- Modal for Adding Post -->
-      <div id="post-modal">
-        <div id="modal-content">
-          <h3>Add Post</h3>
-          <textarea id="post-textarea" placeholder="Write your post..."></textarea>
-          <div id="modal-btns">
-            <button class="modal-btn" id="cancel-btn">Cancel</button>
-            <button class="modal-btn" id="submit-post-btn">Submit</button>
-          </div>
-        </div>
+        <div id="post-modal">
+          <div id="modal-content">
+            <form action="/submit-post" method="post" id="post-form">
+              <h1>Create to Web</h1>
+              <textarea name="post" id="post" placeholder="What's on your mind..."></textarea>
+              <div id="modal-btns">
+              <button id="close-modal-btn" class="modal-btn" type="button">Cancel</button>
+              <input type="submit" value="Post" id="post-content-btn" class="modal-btn">
+              </div>
+            </form>
       </div>
     </div>
   </div>

@@ -20,13 +20,14 @@ const firebaseApp = initializeApp(firebaseConfig);
 const db = getDatabase(firebaseApp);
 const postsRef = ref(db, 'posts');
 
-// User credentials in memory (temporary login session)
+// Temporary in-memory user session
 const userInputCredentials = {
   email: '',
   password: '',
+  username: '', // ✅ now tracking username
 };
 
-// Middleware for authentication
+// Auth middleware
 function authenticator(req, res, next) {
   if (userInputCredentials.email && userInputCredentials.password) {
     next();
@@ -35,19 +36,17 @@ function authenticator(req, res, next) {
   }
 }
 
-// Routes
-
-// 📑 Opening Page
+// Opening Page
 app.get('/', (req, res) => {
   res.render('opening_page.ejs');
 });
 
-// 📑 Login Page (GET)
+// Login Page
 app.get('/login', (req, res) => {
   res.render('log_in.ejs', { error: null });
 });
 
-// 📤 Login Handler (POST)
+// Login Handler
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -61,6 +60,7 @@ app.post('/login', async (req, res) => {
       if (userData.password === password) {
         userInputCredentials.email = email;
         userInputCredentials.password = password;
+        userInputCredentials.username = userData.username; // ✅ Save username
         return res.redirect('/home');
       }
     }
@@ -72,12 +72,12 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// 📑 Sign Up Page (GET)
+// Sign Up Page
 app.get('/signup', (req, res) => {
   res.render('sign_up.ejs');
 });
 
-// 📤 Sign Up Handler (POST)
+// Sign Up Handler
 app.post('/signup', async (req, res) => {
   const { username, email, password } = req.body;
 
@@ -97,12 +97,12 @@ app.post('/signup', async (req, res) => {
 
     res.redirect('/login');
   } catch (error) {
-    console.error('Error saving user:', error);
+    console.error('Sign up error:', error);
     res.status(500).send('Something went wrong while signing up.');
   }
 });
 
-// 📑 Home Page (Requires login)
+// Home Page (authenticated)
 app.get('/home', authenticator, async (req, res) => {
   try {
     const snapshot = await get(postsRef);
@@ -110,33 +110,48 @@ app.get('/home', authenticator, async (req, res) => {
 
     if (snapshot.exists()) {
       const data = snapshot.val();
-      posts = Object.entries(data).map(([id, value]) => ({ id, value })).reverse();
+      posts = Object.entries(data).map(([id, value]) => {
+        return {
+          id,
+          value: value.post || value, // Post content
+          username: value.username || 'Anonymous', // Username or fallback
+        };
+      }).reverse();
     }
 
-    res.render('home_page.ejs', { posts });
+    res.render('home_page.ejs', { posts, username: userInputCredentials.username });
   } catch (error) {
     console.error('Error fetching posts:', error);
     res.status(500).send('Error fetching posts.');
   }
 });
 
-// 📤 Submit Post
+// Submit Post
 app.post('/submit-post', (req, res) => {
   const post = req.body.post;
+  const username = userInputCredentials.username || 'Anonymous';
 
   if (post && post.trim() !== '') {
-    push(postsRef, post.trim());
+    push(postsRef, {
+      post: post.trim(),
+      username,
+    });
   }
 
   res.redirect('/home');
 });
 
-// 📑 Profile Page
+// Profile Page
 app.get('/profile', authenticator, (req, res) => {
-  res.render('profile_page.ejs');
+  res.render('profile_page.ejs', { username: userInputCredentials.username });
 });
 
-// Start the server
+// API Endpoint to Fetch Username
+app.get('/api/username', (req, res) => {
+  res.json({ username: userInputCredentials.username || 'Anonymous' });
+});
+
+// Start server
 app.listen(port, () => {
   console.log(`🚀 Server running at http://localhost:${port}`);
 });
