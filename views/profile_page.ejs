@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SpyThere</title>
   <link rel="stylesheet" href="/home_page.css">
+  <link rel="stylesheet" href="/profile_page.css">
 </head>
 <body>
 
@@ -14,7 +15,6 @@
   <div class="app-layout">
     <!-- Navbar -->
     <%- include('partials/navbar') %>
-
     <!-- Main Content -->
     <main class="main-content">
       <!-- Modal -->
@@ -30,6 +30,19 @@
           </form>
         </div>
       </div>
+
+      <!-- Profile Content -->
+      <main class="profile-content">
+        <section class="profile-header">
+          <div class="profile-picture">
+            <img src="/images/default-avatar.png" alt="Profile Picture">
+          </div>
+          <div class="profile-info">
+            <h2>Username</h2>
+            <p>@email.com</p>
+            <button class="edit-profile-btn">Edit Profile</button>
+          </div>
+        </section>
 
       <!-- Posts List -->
       <div class="todo-container">

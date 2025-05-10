@@ -25,5 +25,6 @@
   "bugs": {
     "url": "https://github.com/YameteAHH/SpyThere/issues"
   },
-  "homepage": "https://github.com/YameteAHH/SpyThere#readme"
+  "homepage": "https://github.com/YameteAHH/SpyThere#readme",
+  "devDependencies": {}
 }
