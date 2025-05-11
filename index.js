@@ -13,6 +13,7 @@ app.use(express.urlencoded({ extended: true }));
 // Firebase configuration
 const firebaseConfig = {
   databaseURL: 'https://spythere-8b6c7-default-rtdb.asia-southeast1.firebasedatabase.app/',
+
 };
 
 // Initialize Firebase
@@ -107,7 +108,6 @@ app.get('/home', authenticator, async (req, res) => {
   try {
     const snapshot = await get(postsRef);
     let posts = [];
-
     if (snapshot.exists()) {
       const data = snapshot.val();
       posts = Object.entries(data).map(([id, value]) => {
@@ -142,8 +142,34 @@ app.post('/submit-post', (req, res) => {
 });
 
 // Profile Page
-app.get('/profile', authenticator, (req, res) => {
-  res.render('profile_page.ejs', { username: userInputCredentials.username });
+app.get('/profile', authenticator, async (req, res) => {
+  try {
+    const snapshot = await get(postsRef);
+    let posts = [];
+    
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      posts = Object.entries(data)
+        .map(([id, value]) => ({
+          id,
+          value: value.post || value,
+          username: value.username || 'Anonymous'
+        }))
+        .filter(post => post.username === userInputCredentials.username)
+        .reverse();
+    }
+
+    res.render('profile_page.ejs', { 
+      username: userInputCredentials.username,
+      posts: posts || []
+    });
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+    res.render('profile_page.ejs', { 
+      username: userInputCredentials.username,
+      posts: []
+    });
+  }
 });
 
 // API Endpoint to Fetch Username

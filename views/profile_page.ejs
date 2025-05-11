@@ -6,7 +6,7 @@
   <title>SpyThere</title>
   <link rel="stylesheet" href="/home_page.css">
 </head>
-<body>
+<body class="profile-page">
 
   <!-- Header -->
   <%- include('partials/header') %>
@@ -16,8 +16,26 @@
     <%- include('partials/navbar') %>
 
     <!-- Main Content -->
-    <main class="main-content">
-      <!-- Modal -->
+    <div class="main-content">
+
+      <!-- Posts List Section (todo list inspired)-->
+      <div class="todo-container">
+        <h2><%= username %>'s Posts</h2>
+        <ul>
+          <% if (typeof posts !== 'undefined' && posts.length > 0) { %>
+            <% posts.forEach(post => { %>
+              <li>
+                <strong><%= post.username %></strong>
+                <%= post.value.content || post.value %>
+              </li>
+            <% }) %>
+          <% } else { %>
+            <li>No posts to show.</li>
+          <% } %>
+        </ul>
+      </div>
+
+      <!-- Modal for Adding Post -->
       <div id="post-modal">
         <div id="modal-content">
           <form action="/submit-post" method="post" id="post-form">
@@ -30,20 +48,7 @@
           </form>
         </div>
       </div>
-
-      <!-- Posts List -->
-      <div class="todo-container">
-        <ul>
-          <% if (typeof posts !== 'undefined' && posts.length > 0) { %>
-            <% posts.forEach(post => { %>
-              <li><%= post.value %></li>
-            <% }) %>
-          <% } else { %>
-            <li>No posts to show.</li>
-          <% } %>
-        </ul>
-      </div>
-    </main>
+    </div>
   </div>
 
   <script src="/scripts/index.js"></script>

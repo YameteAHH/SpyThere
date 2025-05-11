@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="home_page.css">
 </head>
 
-<body>
+<body class="home-page">
 
   <!-- Include Header -->
   <%- include('partials/header') %>
@@ -29,7 +29,7 @@
           <% posts.forEach(post => { %>
             <li>
               <strong>
-                <%= post.value.username || "Anonymous" %>
+                <%= post.username || "Anonymous" %>
               </strong>
               <%= post.value.content || post.value %>
             </li>

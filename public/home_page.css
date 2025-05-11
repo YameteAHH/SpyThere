@@ -8,7 +8,8 @@
 body {
   background-color: rgba(0, 0, 0, 1);
   color: beige;
-  font-family: sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
 }
 
 /* === Header === */
@@ -19,6 +20,9 @@ header.header {
   color: white;
   padding: 10px 20px;
   height: 60px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 10;
 }
 
 header.header .logo {
@@ -30,6 +34,8 @@ header.header .logo {
 header.header #title {
   font-size: 24px;
   background-color: rgb(15, 13, 13);
+  font-weight: bold;
+  letter-spacing: 1px;
 }
 
 /* === App Layout === */
@@ -40,30 +46,45 @@ header.header #title {
 
 /* === Sidebar (Navbar) === */
 nav.sidebar {
-  width: 50px;
-  background-color: rgba(0, 0, 0, 0.5);
+  width: 60px;
   padding: 40px 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 20px;
 }
 
 .profile-icon {
   width: 40px;
   height: 40px;
   border-radius: 50%;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.profile-icon:hover, 
+.profile-page .profile-icon {
+  transform: scale(1.1);
+  border-color: crimson;
+  box-shadow: 0 0 15px rgba(220, 20, 60, 0.5);
 }
 
 #add-post-btn {
-  width: 30px;
-  height: 30px;
-  font-size: 18px;
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
   color: white;
   background-color: crimson;
   border: none;
   border-radius: 50%;
   cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+#add-post-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 15px rgba(220, 20, 60, 0.5);
 }
 
 /* Web Button */
@@ -76,6 +97,16 @@ nav.sidebar {
 .web-icon {
   width: 38px;
   height: 38px;
+  transition: all 0.3s ease;
+  border-radius: 50%;
+  border: 2px solid transparent;
+}
+
+.web-icon:hover,
+.home-page .web-icon {
+  transform: scale(1.1);
+  border-color: crimson;
+  box-shadow: 0 0 15px rgba(220, 20, 60, 0.5);
 }
 
 /* Logout Button */
@@ -89,21 +120,40 @@ nav.sidebar {
 .logout-icon {
   width: 30px;
   height: 30px;
+  transition: all 0.3s ease;
+  border-radius: 50%;
+  border: 2px solid transparent;
+}
+
+.logout-icon:hover {
+  transform: scale(1.1);
+  border-color: crimson;
+  box-shadow: 0 0 15px rgba(220, 20, 60, 0.5);
 }
 
 /* === Main Content === */
 .main-content {
   flex: 1;
-  padding: 20px;
+  padding: 20px 20px 20px 0; /* Reduced left padding */
   overflow-y: auto;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0.85));
+}
+
+.main-content h2 {
+  color: white;
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 /* Todo List Section */
 .todo-container {
-  margin: 20px;
   display: flex;
   flex-direction: column;
   gap: 15px;
+  max-width: 800px;
+  margin: 0 auto;
+  padding-left: 10px; /* Added small padding */
 }
 
 .todo-container ul {
@@ -112,65 +162,156 @@ nav.sidebar {
 }
 
 .todo-container li {
-  background-color: #000000;
-  padding: 10px;
-  border-radius: 20px;
-  border: 1px solid blanchedalmond;
-  margin-bottom: 15px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+  background-color: rgba(15, 13, 13, 0.95);
+  padding: 15px 20px;
+  border-radius: 15px;
+  border: 1px solid rgba(255, 235, 205, 0.2);
+  margin-bottom: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
   font-size: 18px;
+  transition: all 0.3s ease;
+}
+
+.todo-container li:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 235, 205, 0.4);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.todo-container li strong {
+  color: crimson;
+  display: block;
+  margin-bottom: 5px;
+  font-size: 0.9em;
+  letter-spacing: 0.5px;
 }
 
 /* === Modal === */
 #post-modal {
   display: none;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.8);
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   z-index: 1000;
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
 }
 
 #modal-content {
   position: relative;
-  margin: 15% auto;
-  padding: 1rem;
-  border: 1px solid rgb(97, 97, 97);
-  border-radius: 0.5rem;
+  margin: 10% auto;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
   width: 90%;
-  max-width: 500px;
-  background-color: #000;
+  max-width: 600px;
+  background-color: rgb(15, 13, 13);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+#modal-content h1 {
+  color: white;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  text-align: center;
 }
 
 #modal-btns {
-  margin-top: 1rem;
+  margin-top: 1.5rem;
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
 }
 
 .modal-btn {
-  background-color: rgb(15, 13, 13);
-  padding: 0.5rem 1.2rem;
+  background-color: rgb(25, 23, 23);
+  padding: 0.8rem 1.5rem;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: 10px;
   cursor: pointer;
   color: white;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.modal-btn:hover {
+  background-color: crimson;
+  transform: translateY(-2px);
 }
 
 /* Text Input */
 textarea {
   width: 100%;
-  height: 10rem;
-  border: none;
+  height: 12rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   resize: none;
   padding: 1rem;
   font-size: 1rem;
-  border-radius: 0.5rem;
-  background-color: rgb(15, 13, 13);
+  border-radius: 10px;
+  background-color: rgba(25, 23, 23, 0.95);
   color: white;
+  transition: all 0.3s ease;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: crimson;
+  box-shadow: 0 0 10px rgba(220, 20, 60, 0.3);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  nav.sidebar {
+    width: 60px;
+    padding: 20px 10px;
+  }
+
+  .main-content {
+    padding: 20px 10px;
+  }
+
+  .todo-container {
+    margin: 10px;
+  }
+
+  #modal-content {
+    margin: 5% auto;
+    padding: 1rem;
+  }
+
+  .modal-btn {
+    padding: 0.6rem 1.2rem;
+  }
+
+  textarea {
+    height: 10rem;
+  }
+}
+
+/* Dark mode optimization */
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #000;
+  }
+
+  .main-content {
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.98), rgba(0, 0, 0, 0.9));
+  }
 }
 
 
