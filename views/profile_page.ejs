@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SpyThere</title>
+  <title>SpyThere - Profile</title>
   <link rel="stylesheet" href="/home_page.css">
 </head>
 <body class="profile-page">
@@ -22,11 +22,11 @@
       <div class="todo-container">
         <h2><%= username %>'s Posts</h2>
         <ul>
-          <% if (typeof posts !== 'undefined' && posts.length > 0) { %>
+          <% if (posts.length > 0) { %>
             <% posts.forEach(post => { %>
               <li>
                 <strong><%= post.username %></strong>
-                <%= post.value.content || post.value %>
+                <%= post.value %>
               </li>
             <% }) %>
           <% } else { %>
@@ -39,7 +39,7 @@
       <div id="post-modal">
         <div id="modal-content">
           <form action="/submit-post" method="post" id="post-form">
-            <h1>create to web</h1>
+            <h1>Create to Web</h1>
             <textarea name="post" id="post" placeholder="What's on your mind..."></textarea>
             <div id="modal-btns">
               <button id="close-modal-btn" class="modal-btn" type="button">Cancel</button>

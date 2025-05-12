@@ -27,31 +27,224 @@
       <div class="todo-container">
         <ul>
           <% posts.forEach(post => { %>
-            <li>
-              <strong>
-                <%= post.username || "Anonymous" %>
-              </strong>
-              <%= post.value.content || post.value %>
+            <li data-post-id="<%= post.id %>">
+              <strong><%= post.username %></strong>
+              <%= post.value %>
+              <div class="post-reactions">
+                <img src="/assets/Like_Icon.png" alt="Like" class="reaction-icon">
+                <img src="/assets/Comment_Icon.png" alt="Comment" class="reaction-icon comment-btn">
+                <img src="/assets/Share_Icon.png" alt="Share" class="reaction-icon">
+              </div>
             </li>
           <% }) %>
         </ul>
       </div>
 
       <!-- Modal for Adding Post -->
-        <div id="post-modal">
-          <div id="modal-content">
-            <form action="/submit-post" method="post" id="post-form">
-              <h1>Create to Web</h1>
-              <textarea name="post" id="post" placeholder="What's on your mind..."></textarea>
-              <div id="modal-btns">
+      <div id="post-modal">
+        <div id="modal-content">
+          <form action="/submit-post" method="post" id="post-form">
+            <h1>Create to Web</h1>
+            <textarea name="post" id="post" placeholder="What's on your mind..."></textarea>
+            <div id="modal-btns">
               <button id="close-modal-btn" class="modal-btn" type="button">Cancel</button>
               <input type="submit" value="Post" id="post-content-btn" class="modal-btn">
-              </div>
-            </form>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <!-- Modal for Comments -->
+      <div class="comment-modal">
+        <div class="comment-modal-content">
+          <button class="close-comment-modal">×</button>
+          <h3>Comments</h3>
+          
+          <!-- Comment Input Section -->
+          <div class="comment-input-section">
+            <textarea placeholder="Write a comment..."></textarea>
+            <div class="comment-actions">
+              <button type="button" class="modal-btn">Cancel</button>
+              <button type="button" class="modal-btn">Post Comment</button>
+            </div>
+          </div>
+          
+          <div class="comment-divider"></div>
+          
+          <!-- Comment List Section -->
+          <div class="comment-list-section">
+            <div class="loading-comments">Loading comments</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
+  
   <script src="/scripts/index.js"></script>
+  <script>
+    // Comment Modal Functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const commentBtns = document.querySelectorAll('.comment-btn');
+      const commentModal = document.querySelector('.comment-modal');
+      const closeCommentBtn = document.querySelector('.close-comment-modal');
+      const cancelCommentBtn = document.querySelector('.comment-actions .modal-btn:first-child');
+      const commentListSection = document.querySelector('.comment-list-section');
+      
+      // Current post being commented on
+      let currentPostId = null;
+      
+      // Open comment modal when comment icon is clicked
+      commentBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+          const postItem = this.closest('li');
+          currentPostId = postItem.dataset.postId;
+          console.log('Opening comments for post:', currentPostId);
+          commentModal.style.display = 'block';
+          
+          // Clear previous comments
+          commentListSection.innerHTML = '';
+          
+          // Show loading indicator
+          const loadingMsg = document.createElement('div');
+          loadingMsg.className = 'loading-comments';
+          loadingMsg.textContent = 'Loading comments';
+          commentListSection.appendChild(loadingMsg);
+          
+          // Fetch comments from server for this post
+          fetchComments(currentPostId);
+        });
+      });
+      
+      // Fetch comments from the server
+      async function fetchComments(postId) {
+        try {
+          console.log('Fetching comments for post:', postId);
+          // Encode the postId to handle special characters in the URL
+          const encodedPostId = encodeURIComponent(postId);
+          const response = await fetch(`/api/comments/${encodedPostId}`);
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Server returned ${response.status}: ${errorText}`);
+          }
+          
+          const data = await response.json();
+          console.log('Comments received:', data);
+          
+          // Clear loading message
+          commentListSection.innerHTML = '';
+          
+          if (data.comments && data.comments.length > 0) {
+            // Display comments
+            data.comments.forEach(comment => {
+              const commentElement = createCommentElement(comment.author, comment.text);
+              commentListSection.appendChild(commentElement);
+            });
+          } else {
+            // Show no comments message
+            const noCommentsMsg = document.createElement('div');
+            noCommentsMsg.className = 'no-comments-message';
+            noCommentsMsg.textContent = 'No comments yet. Be the first to comment!';
+            commentListSection.appendChild(noCommentsMsg);
+          }
+        } catch (error) {
+          console.error('Error fetching comments:', error);
+          commentListSection.innerHTML = `<div class="error-message">Failed to load comments: ${error.message}</div>`;
+        }
+      }
+      
+      // Helper function to create comment element
+      function createCommentElement(author, text) {
+        const commentElement = document.createElement('div');
+        commentElement.className = 'comment-item';
+        commentElement.innerHTML = `
+          <div class="comment-author">${author}</div>
+          <div class="comment-text">${text}</div>
+        `;
+        return commentElement;
+      }
+      
+      // Close comment modal
+      function closeCommentModal() {
+        commentModal.style.display = 'none';
+        currentPostId = null;
+      }
+      
+      closeCommentBtn.addEventListener('click', closeCommentModal);
+      cancelCommentBtn.addEventListener('click', closeCommentModal);
+      
+      // Close modal when clicking outside
+      commentModal.addEventListener('click', function(e) {
+        if (e.target === commentModal) {
+          closeCommentModal();
+        }
+      });
+      
+      // Post comment button
+      const postCommentBtn = document.querySelector('.comment-actions .modal-btn:last-child');
+      postCommentBtn.addEventListener('click', async function() {
+        const commentTextarea = document.querySelector('.comment-input-section textarea');
+        const commentText = commentTextarea.value;
+        
+        if (commentText.trim() === '' || !currentPostId) {
+          console.log('Empty comment or no post ID');
+          return;
+        }
+        
+        console.log('Posting comment to post:', currentPostId);
+        
+        try {
+          // Show posting indicator
+          postCommentBtn.disabled = true;
+          postCommentBtn.textContent = 'Posting...';
+          
+          // Send comment to server
+          const response = await fetch('/api/comments', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              postId: currentPostId,
+              text: commentText
+            })
+          });
+          
+          console.log('Response status:', response.status);
+          
+          if (!response.ok) {
+            const errorData = await response.text();
+            console.error('Server error response:', errorData);
+            throw new Error(`Server returned ${response.status}: ${errorData}`);
+          }
+          
+          const newComment = await response.json();
+          console.log('Comment posted successfully:', newComment);
+          
+          // Clear any "no comments" message
+          const noCommentsMsg = commentListSection.querySelector('.no-comments-message');
+          if (noCommentsMsg) {
+            commentListSection.removeChild(noCommentsMsg);
+          }
+          
+          // Add to UI
+          const newCommentElement = createCommentElement(newComment.author, newComment.text);
+          commentListSection.prepend(newCommentElement);
+          
+          // Clear the input
+          commentTextarea.value = '';
+          
+        } catch (error) {
+          console.error('Error posting comment:', error);
+          alert(`Failed to post comment: ${error.message}`);
+        } finally {
+          // Reset button state
+          postCommentBtn.disabled = false;
+          postCommentBtn.textContent = 'Post Comment';
+        }
+      });
+    });
+  </script>
 </body>
 
 </html>
