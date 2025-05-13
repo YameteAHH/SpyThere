@@ -6,32 +6,32 @@
   <link rel="stylesheet" href="/sign_up.css">
 </head>
 <body>
-  <div class="spider-container">
-    <img src="/assets/SpiderLogoBlack.png" alt="Spider Logo" class="spider-img">
-  </div>  
-  <h1>Sign Up</h1>
+  <div class="page-wrapper">
+    <div class="spider-container">
+      <img src="/assets/SpiderLogoBlack.png" alt="Spider Logo" class="spider-img">
+    </div>  
+    <h1>SIGN UP</h1>
 
-  <form action="/signup" method="POST">
-    <div>
-      <label for="email">Email:</label>
-      <input type="email" id="email" name="email" required>
-    </div>
+    <form action="/signup" method="POST" class="main-content">
+      <div>
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+      </div>
 
-    <div>
-      <label for="password">Password:</label>
-      <input type="password" id="password" name="password" required>
-    </div>
+      <div>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+      </div>
 
-    <div>
-      <label for="username">Username:</label>
-      <input type="text" id="username" name="username" required>
-    </div>
+      <div>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+      </div>
 
-    <div>
-      <button type="submit" class="spy-button">Sign Up</button>
-    </div>
-  </form>
-
-  <p>Already have an account? <a href="/login">Log in here</a></p>
+      <div class="button-container">
+        <button class="spy-btn polygon-shape" type="submit"><span>SPY</span></button>
+      </div>
+    </form>
+  </div>
 </body>
 </html>
