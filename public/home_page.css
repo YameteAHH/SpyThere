@@ -30,7 +30,7 @@ header.header .logo {
   height: auto;
   margin-right: 15px;
   cursor: pointer;
-  transition: transform 0.3s ease;
+    transition: transform 0.3s ease;
 }
 
 header.header #title {
@@ -43,7 +43,6 @@ header.header #title {
 header.header .logo:hover {
   transform: scale(1.1);
 }
-
 /* === App Layout === */
 .app-layout {
   display: flex;

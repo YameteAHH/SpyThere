@@ -152,11 +152,52 @@
       </div>
     </div>
   </div>
-  
+
+  <!-- Modal for Developers -->
+  <div id="developers-modal">
+    <div id="modal-content">
+      <h1>Developers</h1>
+      <div class="developers-list">
+        <div class="developer-item">Aiza Caballero</div>
+        <div class="developer-item">Jaydee Moles</div>
+        <div class="developer-item">Maria Christina Salvador</div>
+        <div class="developer-item">Maverick Malala</div>
+      </div>
+      <div id="modal-btns">
+        <button id="close-developers-modal" class="modal-btn">Close</button>
+      </div>
+    </div>
+  </div>
   <script src="/scripts/index.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       console.log('Page loaded, initializing functionality');
+
+      // // Initialize Developers Modal functionality
+      // const logo = document.querySelector('header.header .logo');
+      // const developersModal = document.getElementById('developers-modal');
+      // const closeDevelopersBtn = document.getElementById('close-developers-modal');
+
+      // // Open developers modal when logo is clicked
+      // if (logo) {
+      //   logo.addEventListener('click', function () {
+      //     developersModal.style.display = 'block';
+      //   });
+      // }
+
+      // // Close developers modal when close button is clicked
+      // if (closeDevelopersBtn) {
+      //   closeDevelopersBtn.addEventListener('click', function () {
+      //     developersModal.style.display = 'none';
+      //   });
+      // }
+
+      // // Close developers modal when clicking outside
+      // window.addEventListener('click', function (e) {
+      //   if (e.target === developersModal) {
+      //     developersModal.style.display = 'none';
+      //   }
+      // });
     
       // Initialize Developers Modal functionality
       const logo = document.querySelector('header.header .logo');
@@ -781,86 +822,85 @@
       
       // Start like functionality initialization
       initializeLikeFunctionality();
-    });
 
-    // Setup delete confirmation modal functionality
-    const deleteConfirmModal = document.getElementById('delete-confirm-modal');
-    const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
-    const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+      // Setup delete confirmation modal functionality
+      const deleteConfirmModal = document.getElementById('delete-confirm-modal');
+      const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+      const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
 
-    // Close delete confirmation modal function
-    function closeDeleteConfirmModal() {
-      deleteConfirmModal.style.display = 'none';
-    }
-
-    // Close modal when cancel button is clicked
-    if (cancelDeleteBtn) {
-      cancelDeleteBtn.addEventListener('click', closeDeleteConfirmModal);
-    }
-
-    // Close modal when clicking outside
-    window.addEventListener('click', function(e) {
-      if (e.target === deleteConfirmModal) {
-        closeDeleteConfirmModal();
+      // Close delete confirmation modal function
+      function closeDeleteConfirmModal() {
+        deleteConfirmModal.style.display = 'none';
       }
-    });
 
-    // Handle confirm delete button click
-    if (confirmDeleteBtn) {
-      confirmDeleteBtn.addEventListener('click', async function() {
-        const commentId = document.getElementById('delete-comment-id').value;
-        const postId = document.getElementById('delete-comment-post-id').value;
-        
-        if (!commentId || !postId) {
-          alert('Missing comment information');
-          return;
-        }
-        
-        console.log('Deleting comment:', commentId, 'from post:', postId);
-        
-        try {
-          const response = await fetch(`/api/comments/${postId}/${commentId}`, {
-            method: 'DELETE',
-            headers: {
-              'Content-Type': 'application/json',
-            }
-          });
-          
-          if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Server returned ${response.status}: ${errorText}`);
-          }
-          
-          // Remove comment from UI
-          const commentElement = document.querySelector(`.comment-item[data-comment-id="${commentId}"]`);
-          if (commentElement) {
-            commentElement.remove();
-            
-            // Update comment count
-            const currentCount = parseInt(modalCommentCount.textContent.replace(/[()]/g, '')) || 0;
-            const newCount = Math.max(0, currentCount - 1);
-            modalCommentCount.textContent = `(${newCount})`;
-            updateCommentCount(currentPostId, newCount);
-            
-            // Show no comments message if needed
-            if (newCount === 0) {
-              const noCommentsMsg = document.createElement('div');
-              noCommentsMsg.className = 'no-comments-message';
-              noCommentsMsg.textContent = 'No comments yet. Be the first to comment!';
-              commentListSection.appendChild(noCommentsMsg);
-            }
-          }
-          
-          // Close the modal
-          closeDeleteConfirmModal();
-          
-        } catch (error) {
-          console.error('Error deleting comment:', error);
-          alert(`Failed to delete comment: ${error.message}`);
+      // Close modal when cancel button is clicked
+      if (cancelDeleteBtn) {
+        cancelDeleteBtn.addEventListener('click', closeDeleteConfirmModal);
+      }
+
+      // Close modal when clicking outside
+      window.addEventListener('click', function (e) {
+        if (e.target === deleteConfirmModal) {
           closeDeleteConfirmModal();
         }
       });
-    }
+
+      // Handle confirm delete button click
+      if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', async function () {
+          const commentId = document.getElementById('delete-comment-id').value;
+          const postId = document.getElementById('delete-comment-post-id').value;
+
+          if (!commentId || !postId) {
+            alert('Missing comment information');
+            return;
+          }
+
+          console.log('Deleting comment:', commentId, 'from post:', postId);
+
+          try {
+            const response = await fetch(`/api/comments/${postId}/${commentId}`, {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+              }
+            });
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(`Server returned ${response.status}: ${errorText}`);
+            }
+
+            // Remove comment from UI
+            const commentElement = document.querySelector(`.comment-item[data-comment-id="${commentId}"]`);
+            if (commentElement) {
+              commentElement.remove();
+
+              // Update comment count
+              const currentCount = parseInt(modalCommentCount.textContent.replace(/[()]/g, '')) || 0;
+              const newCount = Math.max(0, currentCount - 1);
+              modalCommentCount.textContent = `(${newCount})`;
+              updateCommentCount(postId, newCount);
+
+              // Show no comments message if needed
+              if (newCount === 0) {
+                const noCommentsMsg = document.createElement('div');
+                noCommentsMsg.className = 'no-comments-message';
+                noCommentsMsg.textContent = 'No comments yet. Be the first to comment!';
+                commentListSection.appendChild(noCommentsMsg);
+              }
+            }
+
+            // Close the modal
+            closeDeleteConfirmModal();
+
+          } catch (error) {
+            console.error('Error deleting comment:', error);
+            closeDeleteConfirmModal();
+          }
+        });
+      }
+    });
   </script>
 </body>
 
