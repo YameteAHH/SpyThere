@@ -17,6 +17,37 @@
 
     <!-- Main Content -->
     <div class="main-content">
+      
+      <!-- Profile Information Section -->
+      <div class="profile-info-container">
+        <div class="profile-header">
+          <h2><%= username %>'s Profile</h2>
+          <button id="edit-profile-btn" class="edit-profile-btn">Edit Profile</button>
+        </div>
+        
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="error-message">
+            <%= error %>
+          </div>
+        <% } %>
+        
+        <% if (typeof success !== 'undefined' && success) { %>
+          <div class="success-message">
+            <%= success %>
+          </div>
+        <% } %>
+        
+        <div class="profile-details">
+          <div class="profile-field">
+            <span class="field-label">Username:</span>
+            <span class="field-value"><%= username %></span>
+          </div>
+          <div class="profile-field">
+            <span class="field-label">Email:</span>
+            <span class="field-value"><%= email %></span>
+          </div>
+        </div>
+      </div>
 
       <!-- Posts List Section (todo list inspired)-->
       <div class="todo-container">
@@ -48,9 +79,90 @@
           </form>
         </div>
       </div>
+      
+      <!-- Modal for Edit Profile -->
+      <div id="edit-profile-modal">
+        <div class="modal-content">
+          <h1>Edit Profile</h1>
+          <form action="/update-profile" method="post" id="edit-profile-form">
+            <div class="form-group">
+              <label for="edit-username">Username</label>
+              <input type="text" id="edit-username" name="username" value="<%= username %>" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="edit-email">Email</label>
+              <input type="email" id="edit-email" name="email" value="<%= email %>" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="current-password">Current Password (required to save changes)</label>
+              <input type="password" id="current-password" name="currentPassword" required>
+            </div>
+            
+            <div class="modal-btns">
+              <button id="close-edit-modal-btn" class="modal-btn" type="button">Cancel</button>
+              <input type="submit" value="Save Changes" class="modal-btn">
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   </div>
 
   <script src="/scripts/index.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Edit Profile Modal Functionality
+      const editProfileBtn = document.getElementById('edit-profile-btn');
+      const editProfileModal = document.getElementById('edit-profile-modal');
+      const closeEditModalBtn = document.getElementById('close-edit-modal-btn');
+      
+      // Open modal when edit button is clicked
+      if (editProfileBtn && editProfileModal) {
+        editProfileBtn.addEventListener('click', function() {
+          editProfileModal.style.display = 'block';
+          document.body.style.overflow = 'hidden'; // Prevent scrolling
+        });
+      }
+      
+      // Close modal when cancel button is clicked
+      if (closeEditModalBtn) {
+        closeEditModalBtn.addEventListener('click', function() {
+          editProfileModal.style.display = 'none';
+          document.body.style.overflow = 'auto'; // Allow scrolling
+        });
+      }
+      
+      // Close modal when clicking outside
+      window.addEventListener('click', function(e) {
+        if (e.target === editProfileModal) {
+          editProfileModal.style.display = 'none';
+          document.body.style.overflow = 'auto'; // Allow scrolling
+        }
+      });
+      
+      // Handle form submission with validation
+      const editProfileForm = document.getElementById('edit-profile-form');
+      if (editProfileForm) {
+        editProfileForm.addEventListener('submit', function(e) {
+          const username = document.getElementById('edit-username').value.trim();
+          const email = document.getElementById('edit-email').value.trim();
+          
+          if (!username || username.length < 3) {
+            e.preventDefault();
+            alert('Username must be at least 3 characters long');
+            return;
+          }
+          
+          if (!email || !email.includes('@') || !email.includes('.')) {
+            e.preventDefault();
+            alert('Please enter a valid email address');
+            return;
+          }
+        });
+      }
+    });
+  </script>
 </body>
 </html>
