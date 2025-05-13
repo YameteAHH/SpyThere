@@ -626,6 +626,112 @@ app.get('/api/likes/:postId', async (req, res) => {
   }
 });
 
+// Post API Routes
+app.put('/api/posts/:postId', authenticator, async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { value } = req.body;
+
+    console.log(`Updating post ${postId}`);
+
+    if (!postId) {
+      return res.status(400).json({ error: 'Post ID is required' });
+    }
+
+    if (!value || value.trim() === '') {
+      return res.status(400).json({ error: 'Post content is required' });
+    }
+
+    // Decode the postId if it was URL encoded
+    const decodedPostId = decodeURIComponent(postId);
+
+    // Get the post to check ownership
+    const postRef = ref(db, `posts/${decodedPostId}`);
+    const snapshot = await get(postRef);
+
+    if (!snapshot.exists()) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const post = snapshot.val();
+
+    // Check if the current user is the author of the post
+    if (post.username !== userSession.username) {
+      return res.status(403).json({ error: 'You can only edit your own posts' });
+    }
+
+    // Update the post
+    await update(postRef, {
+      post: value.trim(),
+      edited: true,
+      editTimestamp: Date.now()
+    });
+
+    // Get the updated post
+    const updatedSnapshot = await get(postRef);
+    const updatedPost = {
+      id: decodedPostId,
+      value: updatedSnapshot.val().post,
+      username: updatedSnapshot.val().username
+    };
+
+    console.log('Post updated successfully');
+
+    res.json(updatedPost);
+  } catch (error) {
+    console.error('Error updating post:', error);
+    res.status(500).json({ error: 'Failed to update post: ' + error.message });
+  }
+});
+
+// Delete a post
+app.delete('/api/posts/:postId', authenticator, async (req, res) => {
+  try {
+    const { postId } = req.params;
+
+    console.log(`Deleting post ${postId}`);
+
+    if (!postId) {
+      return res.status(400).json({ error: 'Post ID is required' });
+    }
+
+    // Decode the postId if it was URL encoded
+    const decodedPostId = decodeURIComponent(postId);
+
+    // Get the post to check ownership
+    const postRef = ref(db, `posts/${decodedPostId}`);
+    const snapshot = await get(postRef);
+
+    if (!snapshot.exists()) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const post = snapshot.val();
+
+    // Check if the current user is the author of the post
+    if (post.username !== userSession.username) {
+      return res.status(403).json({ error: 'You can only delete your own posts' });
+    }
+
+    // Delete the post
+    await remove(postRef);
+
+    // Also delete all comments and likes for this post
+    const postCommentsRef = ref(db, `comments/${decodedPostId}`);
+    const postLikesRef = ref(db, `likes/${decodedPostId}`);
+
+    await remove(postCommentsRef);
+    await remove(postLikesRef);
+
+    console.log('Post and associated data deleted successfully');
+
+    res.json({ success: true, message: 'Post deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting post:', error);
+    res.status(500).json({ error: 'Failed to delete post: ' + error.message });
+  }
+});
+
 // Start server
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
