@@ -1,61 +1,151 @@
 * {
+
+  text-decoration: none;
+  box-sizing: border-box;
+
+}
+
+/* Body Styling */
+body {
+    background-color: #ff5a5f;
+    font-family: Arial, sans-serif;
+    font-size: 20px;
+    color: white;
     margin: 0;
-    padding: 0;
-    text-decoration: none;
-    box-sizing: border-box;
-    border-radius: 8px;
-    
+    padding: 0%;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
   
-  main section {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-  }
-  
+
+/* Fullscreen Section */
+main section {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Login Container with fixed width */
+main section .login-form {
+  position: relative;
+  margin: 1% auto;
+  display: flex;
+  flex-direction: column;
+  width: 20rem;
+  gap: 1rem;
+  justify-content: center;
+}
+
+/* Input Fields - consistent size */
+.p-e-form input {
+  padding: 10px;
+  font-size: 16px;
+  height: 40px;
+  width: 100%; /* Fill parent container */
+  border: 3px solid #000;
+  border-radius: 10px;
+  background: white;
+
+}
+
+/* Logo Styling */
+.logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.logo img {
+  width: 220px;
+  height: auto;
+}
+
+/* Login Layout */
+.login {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#login {
+  align-self: center;
+}
+
+/* main section .login .login-form {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+} */
+
+/* Polygon Shape */
+.polygon-shape {
+  width: 130px;
+  height: 100px;
+  background: black;
+  clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-weight: bold;
+  font-size: 22px;
+  border: 1px solid white;
+  align-self: center;
+}
+
+/* Spider Styles */
+.spider-container {
+  margin-top: -15px;
+  margin-bottom: 30px;
+}
+
+.spider-img {
+  width: 220px;
+  height: auto;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
   main section .login-form {
-    position: relative;
-    margin: 20% auto;
-    display: flex;
-    flex-direction: column;
-    width: 15%;
-    gap: 1rem;
+    width: 40%;
   }
-  
-  main section .login-form .p-e-form {
-    display: flex;
-    flex-direction: column;
+
+  .p-e-form input {
+    font-size: 14px;
   }
-  
-  body {
-   margin: 0;
-   height: 100vh;
-   display: flex;
-   justify-content: center;
-   align-items: center;   
-   background: pink;   
+
+  .logo img {
+    width: 150px;
   }
-  
-  main section .login .login-form{
-   display: flex;
-   justify-content: center;
-   align-items: center;
-   flex-direction: column;
-  }
-  
+
   .polygon-shape {
-   width: 60px;
-   height: 60px;
-   background: black; 
-   border-radius: 0;
-   clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
-   display: flex;
-   justify-content: center;
-   align-items: center;
-   color: white; 
-   font-weight: bold;
-   font-size: 14px;
+    width: 80px;
+    height: 60px;
+    font-size: 14px;
   }
-  
+}
+
+@media (max-width: 480px) {
+  main section .login-form {
+    width: 95%;
+  }
+
+  .logo img {
+    width: 120px;
+  }
+
+  .polygon-shape {
+    width: 60px;
+    height: 60px;
+    font-size: 12px;
+  }
+
+  .spider-img {
+    width: 180px;
+  }
+}
