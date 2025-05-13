@@ -1,79 +1,107 @@
-/* General styling */
 body {
     background-color: #ff5a5f;
     font-family: Arial, sans-serif;
-    text-align: center;
+    font-size: 20px;
     color: white;
-}
-
-/* Header styling */
-h1 {
-    margin-top: 50px;
-}
-
-/* Form styling */
-form {
-    display: inline-block;
-    margin-top: 20px;
-}
-
-div {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  /* Wrapper to center everything vertically */
+  .page-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: -270px; /* Moves content upward */
+  }
+  
+  /* Spider image styling */
+  .spider-container {
+    margin-top: -15px;
+    margin-bottom: 30px;
+  }
+  
+  .spider-img {
+    width: 220px;
+    height: auto;
+  }
+  
+  /* Header styling */
+  h1 {
+    margin: 20px 0 40px;
+    line-height: 1.2;
+    text-align: center;
+  }
+  
+  /* Form styling */
+  form.main-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  form div {
     margin-bottom: 15px;
-}
-
-label {
+  }
+  
+  label {
     display: block;
     margin-bottom: 5px;
-}
-
-input[type="text"],
-input[type="email"],
-input[type="password"] {
+  }
+  
+  input[type="text"],
+  input[type="email"],
+  input[type="password"] {
     width: 200px;
     padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-}
-
-/* Button styling (matching the opening page) */
-.spy-button {
-    background-color: #333;
+    border: 3px solid #000000;
+    border-radius: 10px;
+  }
+  
+  /* SPY button reused from opening page */
+  .button-container {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    margin: 10px;
+    padding: 10px;
+  }
+  
+  .polygon-shape {
+    width: 130px;
+    height: 100px;
+    border: 2px solid black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     color: white;
-    padding: 15px 30px; /* Adjusting padding for a more prominent button */
-    border: none;
-    border-radius: 5px;
-    font-size: 18px;
-    font-weight: bold;
+    font-weight: normal;
+    font-size: 22px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.spy-button:hover {
-    background-color: #555;
-}
-
-/* Link styling */
-p {
-    margin-top: 20px;
-}
-
-a {
-    color: #333;
-    text-decoration: none;
-}
-
-a:hover {
-    text-decoration: underline;
-}
-
-/* Spider image styling */
-.spider-container {
-    margin-top: 20px;
-}
-
-.spider-img {
-    width: 200  px; /* Adjust based on your layout */
-    height: auto;
-    display: block;
-    margin: 0 auto;
-}
+    transition: background 0.3s, transform 0.3s ease-in-out;
+    box-shadow: 0 4px 8px #0000001a;
+    margin: 0 -25px;
+    position: relative;
+  }
+  
+  .polygon-shape span {
+    position: absolute;
+    top: 35%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  
+  .spy-btn {
+    background: #000000;
+    clip-path: polygon(50% 100%, 0% 0%, 100% 0%);
+  }
+  
+  .spy-btn:hover {
+    filter: brightness(85%);
+    transform: translateY(-4px);
+  }
+  
