@@ -151,3 +151,22 @@ body {
     opacity: 1;
   }
   
+  /* Back button styling */
+  .back-btn {
+    position: fixed;
+    bottom: 30px;
+    left: 30px;
+    padding: 10px 20px;
+    background-color: #000000;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+  }
+  
+  .back-btn:hover {
+    transform: translateY(-2px);
+    background-color: #333333;
+  }
+  
