@@ -20,32 +20,27 @@
       
       <!-- Profile Information Section -->
       <div class="profile-info-container">
-        <div class="profile-header">
-          <h2><%= username %>'s Profile</h2>
-          <button id="edit-profile-btn" class="edit-profile-btn">Edit Profile</button>
+        <div class="profile-picture">
+          <img src="/images/profile-placeholder.png" alt="Profile Picture">
         </div>
-        
-        <% if (typeof error !== 'undefined' && error) { %>
-          <div class="error-message">
-            <%= error %>
-          </div>
-        <% } %>
-        
-        <% if (typeof success !== 'undefined' && success) { %>
-          <div class="success-message">
-            <%= success %>
-          </div>
-        <% } %>
-        
         <div class="profile-details">
-          <div class="profile-field">
-            <span class="field-label">Username:</span>
-            <span class="field-value"><%= username %></span>
+          <div class="profile-header">
+            <h2><%= username %>'s Profile</h2>
+            <span class="profile-email"><%= email %></span>
+            <button id="edit-profile-btn" class="edit-profile-btn">Edit Profile</button>
           </div>
-          <div class="profile-field">
-            <span class="field-label">Email:</span>
-            <span class="field-value"><%= email %></span>
-          </div>
+          
+          <% if (typeof error !== 'undefined' && error) { %>
+            <div class="error-message">
+              <%= error %>
+            </div>
+          <% } %>
+          
+          <% if (typeof success !== 'undefined' && success) { %>
+            <div class="success-message">
+              <%= success %>
+            </div>
+          <% } %> 
         </div>
       </div>
 
