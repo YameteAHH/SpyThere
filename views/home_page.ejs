@@ -140,6 +140,21 @@
           </div>
         </div>
       </div>
+      <!-- Modal for Developers -->
+      <div id="developers-modal">
+        <div id="modal-content">
+          <h1>Developers</h1>
+          <div class="developers-list">
+            <div class="developer-item">Aiza Caballero</div>
+            <div class="developer-item">Jaydee Moles</div>
+            <div class="developer-item">Maria Christina Salvador</div>
+            <div class="developer-item">Maverick Malala</div>
+          </div>
+          <div id="modal-btns">
+            <button id="close-developers-modal" class="modal-btn">Close</button>
+          </div>
+        </div>
+      </div>
 <!-- Modal for Edit Post -->
 <div id="edit-post-modal" class="modal">
   <div class="modal-content">
@@ -193,36 +208,61 @@
   </div>
   <script src="/scripts/index.js"></script>
   <script>
-    // Comment Modal Functionality
     document.addEventListener('DOMContentLoaded', function() {
       console.log('Page loaded, initializing functionality');
 
+      // // Initialize Developers Modal functionality
+      // const logo = document.querySelector('header.header .logo');
+      // const developersModal = document.getElementById('developers-modal');
+      // const closeDevelopersBtn = document.getElementById('close-developers-modal');
+
+      // // Open developers modal when logo is clicked
+      // if (logo) {
+      //   logo.addEventListener('click', function () {
+      //     developersModal.style.display = 'block';
+      //   });
+      // }
+
+      // // Close developers modal when close button is clicked
+      // if (closeDevelopersBtn) {
+      //   closeDevelopersBtn.addEventListener('click', function () {
+      //     developersModal.style.display = 'none';
+      //   });
+      // }
+
+      // // Close developers modal when clicking outside
+      // window.addEventListener('click', function (e) {
+      //   if (e.target === developersModal) {
+      //     developersModal.style.display = 'none';
+      //   }
+      // });
+    
       // Initialize Developers Modal functionality
       const logo = document.querySelector('header.header .logo');
       const developersModal = document.getElementById('developers-modal');
       const closeDevelopersBtn = document.getElementById('close-developers-modal');
-
+      
       // Open developers modal when logo is clicked
       if (logo) {
-        logo.addEventListener('click', function () {
+        logo.addEventListener('click', function() {
           developersModal.style.display = 'block';
         });
       }
-
+      
       // Close developers modal when close button is clicked
       if (closeDevelopersBtn) {
-        closeDevelopersBtn.addEventListener('click', function () {
+        closeDevelopersBtn.addEventListener('click', function() {
           developersModal.style.display = 'none';
         });
       }
-
+      
       // Close developers modal when clicking outside
-      window.addEventListener('click', function (e) {
+      window.addEventListener('click', function(e) {
         if (e.target === developersModal) {
           developersModal.style.display = 'none';
         }
       });
-    
+
       // Initialize comment functionality
       const commentBtns = document.querySelectorAll('.comment-btn');
       const commentModal = document.querySelector('.comment-modal');

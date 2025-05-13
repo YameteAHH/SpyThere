@@ -1006,7 +1006,6 @@ textarea:focus {
   pointer-events: none;
   user-select: none;
 }
-
 /* Post Actions Container */
 .post-actions-container {
   display: flex;
