@@ -969,7 +969,128 @@ textarea:focus {
   user-select: none;
 }
 
-/* Remove the hover effect rule */
-.developer-item:hover {
-  /* Removing this rule entirely */
+/* Post Actions Container */
+.post-actions-container {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.post-actions-container:hover {
+  opacity: 1;
+}
+
+.post-action-icon {
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.post-action-icon:hover {
+  transform: scale(1.2);
+}
+
+.edit-post-btn {
+  filter: brightness(0.8) sepia(1) hue-rotate(190deg) saturate(5);
+}
+
+.delete-post-btn {
+  filter: brightness(0.8) sepia(1) hue-rotate(320deg) saturate(8);
+}
+
+/* Edit Post Modal */
+#edit-post-modal {
+  display: none;
+  position: fixed;
+  z-index: 1100;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.8);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+}
+
+#edit-post-modal .modal-content {
+  position: relative;
+  background-color: rgb(15, 13, 13);
+  margin: 15% auto;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  width: 80%;
+  max-width: 500px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  animation: modalSlideIn 0.3s ease;
+}
+
+#edit-post-modal h3 {
+  color: white;
+  margin-top: 0;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+#edit-post-text {
+  width: 100%;
+  height: 120px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(25, 23, 23, 0.95);
+  color: white;
+  font-size: 16px;
+  resize: none;
+  margin-bottom: 20px;
+}
+
+#edit-post-text:focus {
+  outline: none;
+  border-color: crimson;
+  box-shadow: 0 0 10px rgba(220, 20, 60, 0.3);
+}
+
+/* Delete Post Confirmation Modal */
+#delete-post-confirm-modal {
+  display: none;
+  position: fixed;
+  z-index: 1200;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.8);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+}
+
+#delete-post-confirm-modal .modal-content {
+  position: relative;
+  background-color: rgb(15, 13, 13);
+  margin: 20% auto;
+  padding: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  width: 80%;
+  max-width: 400px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  animation: modalSlideIn 0.3s ease;
+  text-align: center;
+}
+
+#delete-post-confirm-modal h3 {
+  color: white;
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+#delete-post-confirm-modal p {
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 25px;
 }
