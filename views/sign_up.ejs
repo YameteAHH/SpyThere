@@ -20,7 +20,12 @@
 
       <div>
         <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required>
+        <div class="password-container">
+          <input type="password" id="password" name="password" required>
+          <button type="button" class="toggle-password" onclick="togglePassword('password')">
+            <img src="/assets/eye.svg" alt="Toggle password visibility" id="password-toggle-icon">
+          </button>
+        </div>
       </div>
 
       <div>
@@ -33,5 +38,19 @@
       </div>
     </form>
   </div>
+  <script>
+    function togglePassword(inputId) {
+      const passwordInput = document.getElementById(inputId);
+      const icon = document.getElementById(inputId + '-toggle-icon');
+      
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        icon.src = '/assets/eye-off.svg';
+      } else {
+        passwordInput.type = 'password';
+        icon.src = '/assets/eye.svg';
+      }
+    }
+  </script>
 </body>
 </html>
