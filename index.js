@@ -6,6 +6,7 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import dotenv from 'dotenv';
 import { v4 as uuidv4 } from 'uuid';
 
+// Load environment variables
 dotenv.config();
 
 const app = express();
@@ -37,23 +38,23 @@ const upload = multer({
 
 // Configure AWS S3
 const s3Client = new S3Client({
-  region: 'ap-southeast-2',
+  region: process.env.AWS_REGION || 'ap-southeast-2',
   credentials: {
-    accessKeyId: 'AKIAZSKT6RARL36UOKOT',
-    secretAccessKey: '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'
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || 'AKIAZSKT6RARL36UOKOT',
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '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'
   }
 });
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyD1lJAV3m3b0wAKPww8moPHl6dD8-Mgv4M",
-  authDomain: "spythere-8b6c7.firebaseapp.com",
-  databaseURL: "https://spythere-8b6c7-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "spythere-8b6c7",
-  storageBucket: "spythere-8b6c7.firebasestorage.app",
-  messagingSenderId: "953650363803",
-  appId: "1:953650363803:web:ceaad94aeecb2e274a753e",
-  measurementId: "G-F57JK91PE2"
+  apiKey: process.env.FIREBASE_API_KEY || "AIzaSyD1lJAV3m3b0wAKPww8moPHl6dD8-Mgv4M",
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN || "spythere-8b6c7.firebaseapp.com",
+  databaseURL: process.env.FIREBASE_DATABASE_URL || "https://spythere-8b6c7-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: process.env.FIREBASE_PROJECT_ID || "spythere-8b6c7",
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "spythere-8b6c7.firebasestorage.app",
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || "953650363803",
+  appId: process.env.FIREBASE_APP_ID || "1:953650363803:web:ceaad94aeecb2e274a753e",
+  measurementId: process.env.FIREBASE_MEASUREMENT_ID || "G-F57JK91PE2"
 };
 
 // Initialize Firebase
