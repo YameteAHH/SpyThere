@@ -1,6 +1,12 @@
 import express from 'express';
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, set, push, get, child, update, remove } from 'firebase/database';
+import multer from 'multer';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import dotenv from 'dotenv';
+import { v4 as uuidv4 } from 'uuid';
+
+dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -10,6 +16,33 @@ app.set('view engine', 'ejs');
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json()); // Add JSON middleware for API endpoints
+
+// Configure multer for handling file uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    // Accept images, videos, and gifs
+    if (file.mimetype.startsWith('image/') ||
+      file.mimetype.startsWith('video/') ||
+      file.mimetype === 'image/gif') {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only images, videos, and GIFs are allowed.'));
+    }
+  }
+});
+
+// Configure AWS S3
+const s3Client = new S3Client({
+  region: 'ap-southeast-2',
+  credentials: {
+    accessKeyId: 'AKIAZSKT6RARL36UOKOT',
+    secretAccessKey: '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'
+  }
+});
 
 // Firebase configuration
 const firebaseConfig = {
@@ -102,6 +135,7 @@ app.get('/home', authenticator, async (req, res) => {
         id,
         value: value.post || value,
         username: value.username || 'Anonymous',
+        mediaUrl: value.mediaUrl || null,
       })).reverse();
     }
     
@@ -129,15 +163,67 @@ app.get('/home', authenticator, async (req, res) => {
   }
 });
 
-app.post('/submit-post', authenticator, (req, res) => {
-  const post = req.body.post;
-  if (post && post.trim() !== '') {
-    push(postsRef, {
-      post: post.trim(),
+app.post('/submit-post', authenticator, upload.single('media'), async (req, res) => {
+  try {
+    console.log('Received post submission request');
+    console.log('Request body:', req.body);
+    console.log('File:', req.file);
+
+    const post = req.body.post;
+    let mediaUrl = null;
+
+    // If a file was uploaded, store it in S3
+    if (req.file) {
+      console.log('Processing file upload...');
+      const fileExtension = req.file.originalname.split('.').pop();
+      const key = `uploads/${uuidv4()}.${fileExtension}`;
+
+      const uploadParams = {
+        Bucket: 'spytherebucket', // Updated bucket name
+        Key: key,
+        Body: req.file.buffer,
+        ContentType: req.file.mimetype,
+        ACL: 'public-read' // Make the uploaded file publicly accessible
+      };
+
+      console.log('Uploading to S3...');
+      try {
+        const uploadResult = await s3Client.send(new PutObjectCommand(uploadParams));
+        console.log('S3 upload successful:', uploadResult);
+        mediaUrl = `https://spytherebucket.s3.ap-southeast-2.amazonaws.com/${key}`; // Updated URL
+      } catch (s3Error) {
+        console.error('S3 upload error:', s3Error);
+        throw new Error(`S3 upload failed: ${s3Error.message}`);
+      }
+    }
+
+    // Allow empty text if there's a media upload
+    if ((!post || post.trim() === '') && !mediaUrl) {
+      throw new Error('Post content or media is required');
+    }
+
+    console.log('Saving to database...');
+    const newPost = {
+      post: post ? post.trim() : '',
       username: userSession.username || 'Anonymous',
+      mediaUrl: mediaUrl,
+      timestamp: Date.now()
+    };
+    console.log('New post data:', newPost);
+
+    await push(postsRef, newPost);
+    console.log('Post saved successfully');
+
+    res.redirect('/home');
+  } catch (error) {
+    console.error('Error in /submit-post:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({
+      error: 'Error submitting post',
+      details: error.message,
+      stack: error.stack
     });
   }
-  res.redirect('/home');
 });
 
 app.get('/profile', authenticator, async (req, res) => {
@@ -150,7 +236,8 @@ app.get('/profile', authenticator, async (req, res) => {
         .map(([id, value]) => ({
           id,
           value: value.post || value,
-          username: value.username || 'Anonymous'
+          username: value.username || 'Anonymous',
+          mediaUrl: value.mediaUrl || null
         }))
         .filter(post => post.username === userSession.username)
         .reverse();
@@ -664,7 +751,8 @@ app.put('/api/posts/:postId', authenticator, async (req, res) => {
     await update(postRef, {
       post: value.trim(),
       edited: true,
-      editTimestamp: Date.now()
+      editTimestamp: Date.now(),
+      mediaUrl: post.mediaUrl // Preserve the mediaUrl field
     });
 
     // Get the updated post
@@ -672,7 +760,8 @@ app.put('/api/posts/:postId', authenticator, async (req, res) => {
     const updatedPost = {
       id: decodedPostId,
       value: updatedSnapshot.val().post,
-      username: updatedSnapshot.val().username
+      username: updatedSnapshot.val().username,
+      mediaUrl: updatedSnapshot.val().mediaUrl
     };
 
     console.log('Post updated successfully');
