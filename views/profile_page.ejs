@@ -269,8 +269,8 @@
 
         const actionButtons = isOwnComment ? `
           <div class="comment-actions-container">
-            <img src="/assets/Edit_Icon.png" alt="Edit" class="comment-action-icon edit-comment-btn">
-            <img src="/assets/Delete_Icon.png" alt="Delete" class="comment-action-icon delete-comment-btn">
+            <img src="/assets/Edit_Icon.png" alt="Edit" class="comment-action-icon edit-comment-btn" data-comment-id="${comment.id}">
+            <img src="/assets/Delete_Icon.png" alt="Delete" class="comment-action-icon delete-comment-btn" data-comment-id="${comment.id}">
           </div>
         ` : '';
 
@@ -280,26 +280,67 @@
           ${actionButtons}
         `;
 
+        // Add event listeners for edit and delete buttons if it's the user's own comment
         if (isOwnComment) {
-          setTimeout(() => {
-            const editBtn = commentElement.querySelector('.edit-comment-btn');
-            const deleteBtn = commentElement.querySelector('.delete-comment-btn');
+          const editBtn = commentElement.querySelector('.edit-comment-btn');
+          const deleteBtn = commentElement.querySelector('.delete-comment-btn');
 
-            if (editBtn) {
-              editBtn.addEventListener('click', function () {
-                handleEditComment(comment.id, comment.text);
-              });
-            }
+          if (editBtn) {
+            editBtn.onclick = function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+              const commentId = this.getAttribute('data-comment-id');
+              const commentText = commentElement.querySelector('.comment-text').textContent;
+              handleEditComment(commentId, commentText);
+            };
+          }
 
-            if (deleteBtn) {
-              deleteBtn.addEventListener('click', function () {
-                handleDeleteComment(comment.id);
-              });
-            }
-          }, 0);
+          if (deleteBtn) {
+            deleteBtn.onclick = function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+              const commentId = this.getAttribute('data-comment-id');
+              handleDeleteComment(commentId);
+            };
+          }
         }
 
         return commentElement;
+      }
+
+      // Handle editing a comment
+      function handleEditComment(commentId, currentText) {
+        const editCommentTextarea = document.getElementById('edit-comment-text');
+        const commentIdInput = document.getElementById('edit-comment-id');
+        const postIdInput = document.getElementById('edit-comment-post-id');
+
+        if (!editCommentTextarea || !commentIdInput || !postIdInput) {
+          console.error('Required modal elements not found');
+          return;
+        }
+
+        editCommentTextarea.value = currentText;
+        commentIdInput.value = commentId;
+        postIdInput.value = currentPostId;
+
+        editCommentModal.style.display = 'block';
+        editCommentTextarea.focus();
+      }
+
+      // Handle deleting a comment
+      function handleDeleteComment(commentId) {
+        const deleteCommentIdInput = document.getElementById('delete-comment-id');
+        const deleteCommentPostIdInput = document.getElementById('delete-comment-post-id');
+
+        if (!deleteCommentIdInput || !deleteCommentPostIdInput) {
+          console.error('Required delete modal elements not found');
+          return;
+        }
+
+        deleteCommentIdInput.value = commentId;
+        deleteCommentPostIdInput.value = currentPostId;
+
+        deleteConfirmModal.style.display = 'block';
       }
 
       // Function to initialize all post event listeners
@@ -867,83 +908,23 @@
 
         // Post comment button
         if (postCommentBtn) {
-          postCommentBtn.addEventListener('click', async function () {
-            const commentTextarea = document.querySelector('.comment-input-section textarea');
-            const commentText = commentTextarea.value.trim();
-
-            if (commentText === '' || !currentPostId) {
-              console.log('Empty comment or no post ID');
-              return;
-            }
-
-            console.log('Posting comment to post:', currentPostId);
-
-            try {
-              // Show posting indicator
-              postCommentBtn.disabled = true;
-              postCommentBtn.textContent = 'Posting...';
-
-              // Send comment to server
-              const response = await fetch('/api/comments', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  postId: currentPostId,
-                  text: commentText
-                })
-              });
-
-              console.log('Response status:', response.status);
-
-              if (!response.ok) {
-                const errorData = await response.text();
-                console.error('Server error response:', errorData);
-                throw new Error(`Server returned ${response.status}: ${errorData}`);
-              }
-
-              const newComment = await response.json();
-              console.log('Comment posted successfully:', newComment);
-
-              // Clear any "no comments" message
-              const noCommentsMsg = commentListSection.querySelector('.no-comments-message');
-              if (noCommentsMsg) {
-                commentListSection.removeChild(noCommentsMsg);
-              }
-
-              // Add to UI
-              const newCommentElement = createCommentElement(newComment);
-              commentListSection.prepend(newCommentElement);
-
-              // Clear the input
-              commentTextarea.value = '';
-
-              // Update comment count
-              const currentCount = parseInt(modalCommentCount.textContent.replace(/[()]/g, '')) || 0;
-              const newCount = currentCount + 1;
-              modalCommentCount.textContent = `(${newCount})`;
-              updateCommentCount(currentPostId, newCount);
-
-            } catch (error) {
-              console.error('Error posting comment:', error);
-              alert(`Failed to post comment: ${error.message}`);
-            } finally {
-              // Reset button state
-              postCommentBtn.disabled = false;
-              postCommentBtn.textContent = 'Post Comment';
-            }
-          });
+          // Remove this duplicate event listener since we're handling it in initializeCommentPosting()
+          // postCommentBtn.addEventListener('click', async function () { ... });
         }
 
         // Handle editing a comment
         async function handleEditComment(commentId, currentText) {
-          console.log('Editing comment:', commentId);
+          console.log('handleEditComment called:', { commentId, currentText });
 
           // Show edit comment modal
           const editCommentTextarea = document.getElementById('edit-comment-text');
           const commentIdInput = document.getElementById('edit-comment-id');
           const postIdInput = document.getElementById('edit-comment-post-id');
+
+          if (!editCommentTextarea || !commentIdInput || !postIdInput) {
+            console.error('Required modal elements not found');
+            return;
+          }
 
           // Set current values
           editCommentTextarea.value = currentText;
@@ -957,11 +938,19 @@
 
         // Handle deleting a comment
         async function handleDeleteComment(commentId) {
-          console.log('Opening delete confirmation for comment:', commentId);
+          console.log('handleDeleteComment called:', { commentId });
 
           // Set the comment ID in the hidden input
-          document.getElementById('delete-comment-id').value = commentId;
-          document.getElementById('delete-comment-post-id').value = currentPostId;
+          const deleteCommentIdInput = document.getElementById('delete-comment-id');
+          const deleteCommentPostIdInput = document.getElementById('delete-comment-post-id');
+
+          if (!deleteCommentIdInput || !deleteCommentPostIdInput) {
+            console.error('Required delete modal elements not found');
+            return;
+          }
+
+          deleteCommentIdInput.value = commentId;
+          deleteCommentPostIdInput.value = currentPostId;
 
           // Show the modal
           deleteConfirmModal.style.display = 'block';
@@ -974,6 +963,7 @@
 
         // Close edit comment modal function
         function closeEditCommentModal() {
+          console.log('Closing edit comment modal');
           editCommentModal.style.display = 'none';
         }
 
@@ -998,10 +988,13 @@
         if (editCommentForm) {
           editCommentForm.addEventListener('submit', async function (e) {
             e.preventDefault();
+            console.log('Edit comment form submitted');
 
             const commentId = document.getElementById('edit-comment-id').value;
             const postId = document.getElementById('edit-comment-post-id').value;
             const commentText = document.getElementById('edit-comment-text').value.trim();
+
+            console.log('Edit comment data:', { commentId, postId, commentText });
 
             if (!commentText) {
               alert('Comment cannot be empty');
@@ -1053,6 +1046,7 @@
 
         // Close delete confirmation modal function
         function closeDeleteConfirmModal() {
+          console.log('Closing delete confirmation modal');
           deleteConfirmModal.style.display = 'none';
         }
 
@@ -1071,15 +1065,16 @@
         // Handle confirm delete button click
         if (confirmDeleteBtn) {
           confirmDeleteBtn.addEventListener('click', async function () {
+            console.log('Confirm delete button clicked');
             const commentId = document.getElementById('delete-comment-id').value;
             const postId = document.getElementById('delete-comment-post-id').value;
+
+            console.log('Delete comment data:', { commentId, postId });
 
             if (!commentId || !postId) {
               alert('Missing comment information');
               return;
             }
-
-            console.log('Deleting comment:', commentId, 'from post:', postId);
 
             try {
               const response = await fetch(`/api/comments/${postId}/${commentId}`, {
