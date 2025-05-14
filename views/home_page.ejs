@@ -32,7 +32,8 @@
               <%= post.value %>
               <div class="post-reactions">
                 <div class="like-wrapper">
-                  <img src="/assets/Like_Icon.png" alt="Like" class="reaction-icon like-btn" data-liked="false">
+                  <img src="/assets/Like_Icon.png" alt="Like" class="reaction-icon like-btn" data-liked="false"
+                    data-post-id="<%= post.id %>">
                   <span class="like-count" data-post-id="<%= post.id %>">0</span>
                 </div>
                 <div class="comment-wrapper">
@@ -656,29 +657,29 @@
         // Current post being viewed for likes
         let currentLikePostId = null;
         
-        // Toggle like status when like icon is clicked
+        // Remove any existing event listeners
         likeBtns.forEach(btn => {
-          btn.addEventListener('click', async function() {
+          const newBtn = btn.cloneNode(true);
+          btn.parentNode.replaceChild(newBtn, btn);
+        });
+
+        // Get the fresh references after replacing the buttons
+        const freshLikeBtns = document.querySelectorAll('.like-btn');
+        
+        // Toggle like status when like icon is clicked
+        freshLikeBtns.forEach(btn => {
+          btn.addEventListener('click', async function (e) {
+            e.preventDefault(); // Prevent any default behavior
+            e.stopPropagation(); // Stop event propagation
+        
             const postItem = this.closest('li');
             const postId = postItem.dataset.postId;
             const isLiked = this.dataset.liked === 'true';
             
             console.log('Like button clicked for post:', postId, 'Current liked status:', isLiked);
-            
-            // Toggle like status visually first for immediate feedback
-            this.dataset.liked = isLiked ? 'false' : 'true';
-            
-            // Change icon based on like status
-            if (!isLiked) {
-              this.src = '/assets/Liked_Icon.png';
-              this.alt = 'Unlike';
-            } else {
-              this.src = '/assets/Like_Icon.png';
-              this.alt = 'Like';
-            }
-            
-            // Update like count
+
             try {
+              // Send like request to server first
               const response = await fetch('/api/likes', {
                 method: 'POST',
                 headers: {
@@ -698,14 +699,23 @@
               const data = await response.json();
               console.log('Like updated:', data);
               
+              // Only update UI if server request was successful
+              this.dataset.liked = !isLiked ? 'true' : 'false';
+
+              // Update icon based on new like status
+              if (!isLiked) {
+                this.src = '/assets/Liked_Icon.png';
+                this.alt = 'Unlike';
+              } else {
+                this.src = '/assets/Like_Icon.png';
+                this.alt = 'Like';
+              }
+              
               // Update like count in UI
               updateLikeCount(postId, data.likeCount);
+
             } catch (error) {
               console.error('Error updating like:', error);
-              // Revert UI changes on error
-              this.dataset.liked = isLiked ? 'true' : 'false';
-              this.src = isLiked ? '/assets/Liked_Icon.png' : '/assets/Like_Icon.png';
-              this.alt = isLiked ? 'Unlike' : 'Like';
               alert(`Failed to update like: ${error.message}`);
             }
           });
@@ -839,12 +849,14 @@
                 
                 // Check if current user liked this post
                 if (data.userLiked) {
-                  const likeBtn = likeBtns[index];
+                  const likeBtn = document.querySelector(`.like-btn[data-post-id="${postId}"]`) ||
+                    document.querySelector(`li[data-post-id="${postId}"] .like-btn`);
                   if (likeBtn) {
-                    console.log('User previously liked post:', postId);
-                    likeBtn.src = '/assets/Liked_Icon.png';
+                    console.log('User previously liked post:', postId, 'updating button state');
+                    likeBtn.src = window.location.origin + '/assets/Liked_Icon.png';
                     likeBtn.alt = 'Unlike';
                     likeBtn.dataset.liked = 'true';
+                    console.log('Set liked image:', likeBtn.src);
                   }
                 }
               } catch (error) {
@@ -1031,14 +1043,16 @@
               const commentCount = postItem.querySelector('.comment-count').textContent;
               const likeBtn = postItem.querySelector('.like-btn');
               const likedStatus = likeBtn ? likeBtn.dataset.liked : 'false';
-              const likeIconSrc = likedStatus === 'true' ? '/assets/Liked_Icon.png' : '/assets/Like_Icon.png';
+              const likeIconSrc = likedStatus === 'true'
+                ? window.location.origin + '/assets/Liked_Icon.png'
+                : window.location.origin + '/assets/Like_Icon.png';
 
               postItem.innerHTML = `
                 <strong>${username}</strong>
                 ${postText}
                 <div class="post-reactions">
                   <div class="like-wrapper">
-                    <img src="${likeIconSrc}" alt="${likedStatus === 'true' ? 'Unlike' : 'Like'}" class="reaction-icon like-btn" data-liked="${likedStatus}">
+                    <img src="${likeIconSrc}" alt="${likedStatus === 'true' ? 'Unlike' : 'Like'}" class="reaction-icon like-btn" data-liked="${likedStatus}" data-post-id="${postId}">
                     <span class="like-count" data-post-id="${postId}">${likeCount}</span>
                   </div>
                   <div class="comment-wrapper">
@@ -1065,8 +1079,11 @@
                   .then(data => {
                     const userLiked = data.userLiked || false;
                     newLikeBtn.dataset.liked = userLiked.toString();
-                    newLikeBtn.src = userLiked ? '/assets/Liked_Icon.png' : '/assets/Like_Icon.png';
+                    newLikeBtn.src = userLiked
+                      ? window.location.origin + '/assets/Liked_Icon.png'
+                      : window.location.origin + '/assets/Like_Icon.png';
                     newLikeBtn.alt = userLiked ? 'Unlike' : 'Like';
+                    console.log('Updated like button state for post', postId, 'userLiked:', userLiked, 'image src:', newLikeBtn.src);
                   })
                   .catch(error => console.error('Error fetching like status:', error));
               }
@@ -1155,57 +1172,12 @@
 
       // Helper function to initialize event listeners for a post
       function initializePostEventListeners(postItem) {
-        // Like button
+        // Like button - Remove this section since we handle likes in initializeLikeFunctionality
         const likeBtn = postItem.querySelector('.like-btn');
         if (likeBtn) {
-          likeBtn.addEventListener('click', async function () {
-            const postId = postItem.dataset.postId;
-            const isLiked = this.dataset.liked === 'true';
-
-            // Toggle like status visually first
-            this.dataset.liked = isLiked ? 'false' : 'true';
-
-            // Change icon based on like status
-            if (!isLiked) {
-              this.src = '/assets/Liked_Icon.png';
-              this.alt = 'Unlike';
-            } else {
-              this.src = '/assets/Like_Icon.png';
-              this.alt = 'Like';
-            }
-
-            // Update like count on server
-            try {
-              const response = await fetch('/api/likes', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  postId: postId,
-                  liked: !isLiked
-                })
-              });
-
-              if (!response.ok) {
-                throw new Error(`Server returned ${response.status}`);
-              }
-
-              const data = await response.json();
-
-              // Update like count in UI
-              const countElement = postItem.querySelector(`.like-count[data-post-id="${postId}"]`);
-              if (countElement) {
-                countElement.textContent = data.likeCount;
-              }
-            } catch (error) {
-              console.error('Error updating like:', error);
-              // Revert UI changes on error
-              this.dataset.liked = isLiked ? 'true' : 'false';
-              this.src = isLiked ? '/assets/Liked_Icon.png' : '/assets/Like_Icon.png';
-              this.alt = isLiked ? 'Unlike' : 'Like';
-            }
-          });
+          // Remove any existing click listeners
+          const newLikeBtn = likeBtn.cloneNode(true);
+          likeBtn.parentNode.replaceChild(newLikeBtn, likeBtn);
         }
 
         // Comment button
