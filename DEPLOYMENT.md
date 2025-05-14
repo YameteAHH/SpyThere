@@ -71,7 +71,56 @@ Note: For production, configure more restrictive rules based on authentication.
 ```
 4. For production, replace `"*"` in `"AllowedOrigins"` with your Vercel domain.
 
-## Step 4: Deploy to Vercel
+## Step 4: Configure Your Vercel Setup
+
+### Update vercel.json
+
+Make sure your vercel.json contains the following configuration to properly include EJS views:
+
+```json
+{
+  "version": 2,
+  "buildCommand": "npm install",
+  "outputDirectory": ".",
+  "builds": [
+    {
+      "src": "index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "index.js"
+    }
+  ],
+  "functions": {
+    "index.js": {
+      "includeFiles": "views/**"
+    }
+  }
+}
+```
+
+### Update index.js
+
+Make sure your index.js uses the correct path resolution for the views and static directories:
+
+```javascript
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Get current directory for correct file paths in different environments
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Middleware
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+app.use(express.static(path.join(__dirname, 'public')));
+```
+
+## Step 5: Deploy to Vercel
 
 ### Using the Vercel Dashboard
 
@@ -80,7 +129,7 @@ Note: For production, configure more restrictive rules based on authentication.
 3. Import your GitHub/GitLab/Bitbucket repository
 4. Configure the project:
    - Framework Preset: Choose "Other"
-   - Build Command: `npm install`
+   - Build Command: `npm run vercel-build`
    - Output Directory: `.`
    - Install Command: `npm install`
 5. Add Environment Variables:
@@ -106,16 +155,13 @@ vercel
 
 4. During the deployment process, you'll be prompted to add your environment variables.
 
-## Step 5: Verify Deployment
-
-1. After deployment is complete, Vercel will provide you with a URL
-2. Visit the URL to verify your application is working correctly
-3. Test key functionality:
-   - User authentication
-   - Image/video uploads to S3
-   - Realtime Database interactions
-
 ## Troubleshooting
+
+### Views Directory Not Found
+If you see an error like "Failed to lookup view in views directory":
+1. Make sure your vercel.json includes the "includeFiles" directive 
+2. Make sure you're using the correct path resolution in index.js
+3. Try redeploying after making these changes
 
 ### CORS Issues
 If you encounter CORS errors:
