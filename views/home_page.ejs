@@ -29,7 +29,28 @@
           <% posts.forEach(post => { %>
             <li data-post-id="<%= post.id %>">
               <strong><%= post.username %></strong>
-              <%= post.value %>
+              <div class="post-content">
+                <% if (post.value && typeof post.value==='string' && post.value.trim().length> 0) { %>
+                  <div class="truncated-text">
+                    <%= post.value %>
+                  </div>
+                  <span class="see-more-btn">See more...</span>
+                  <% } %>
+                    </div>
+                    <% if (post.mediaUrl) { %>
+                      <% if (post.mediaUrl.match(/\.(jpeg|jpg|png|gif)$/i)) { %>
+                        <div class="media-container">
+                          <img src="<%= post.mediaUrl %>" alt="Post media" class="post-media">
+                        </div>
+                        <% } else if (post.mediaUrl.match(/\.(mp4|webm|ogg)$/i)) { %>
+                          <div class="media-container">
+                            <video controls class="post-media">
+                              <source src="<%= post.mediaUrl %>">
+                              Your browser does not support the video tag.
+                            </video>
+                          </div>
+                          <% } %>
+                            <% } %>
               <div class="post-reactions">
                 <div class="like-wrapper">
                   <img src="/assets/Like_Icon.png" alt="Like" class="reaction-icon like-btn" data-liked="false"
@@ -56,9 +77,16 @@
       <!-- Modal for Adding Post -->
       <div id="post-modal">
         <div id="modal-content">
-          <form action="/submit-post" method="post" id="post-form">
+          <form action="/submit-post" method="post" id="post-form" enctype="multipart/form-data">
             <h1>Create to Web</h1>
             <textarea name="post" id="post" placeholder="What's on your mind..."></textarea>
+            <div class="custom-file-input">
+              <label class="file-input-label">
+                <img src="/assets/Add_Image_Icon.png" alt="Add Image" title="Upload an image or video">
+                <input type="file" name="media" accept="image/*,video/*,image/gif">
+              </label>
+              <span class="file-name"></span>
+            </div>
             <div id="modal-btns">
               <button id="close-modal-btn" class="modal-btn" type="button">Cancel</button>
               <input type="submit" value="Post" id="post-content-btn" class="modal-btn">
@@ -359,11 +387,28 @@
           </div>
         ` : '';
         
-        commentElement.innerHTML = `
+        // Check if comment text is longer than 150 characters
+        const commentText = comment.text;
+        const needsTruncation = commentText.length > 150;
+
+        let commentHTML = `
           <div class="comment-author">${comment.author}</div>
-          <div class="comment-text">${comment.text}</div>
-          ${actionButtons}
         `;
+
+        if (needsTruncation) {
+          commentHTML += `
+            <div class="comment-text truncated-text">${commentText}</div>
+            <span class="comment-see-more">See more...</span>
+          `;
+        } else {
+          commentHTML += `
+            <div class="comment-text">${commentText}</div>
+          `;
+        }
+
+        commentHTML += actionButtons;
+
+        commentElement.innerHTML = commentHTML;
         
         // Add event listeners for edit and delete buttons if it's the user's own comment
         if (isOwnComment) {
@@ -383,6 +428,17 @@
               });
             }
           }, 0);
+        }
+        
+        // Add see more functionality if needed
+        if (needsTruncation) {
+          const seeMoreBtn = commentElement.querySelector('.comment-see-more');
+          const commentTextDiv = commentElement.querySelector('.comment-text');
+
+          seeMoreBtn.addEventListener('click', function () {
+            commentTextDiv.classList.toggle('expanded');
+            this.textContent = commentTextDiv.classList.contains('expanded') ? 'See less' : 'See more...';
+          });
         }
         
         return commentElement;
@@ -606,8 +662,39 @@
             const commentElement = document.querySelector(`.comment-item[data-comment-id="${commentId}"]`);
             if (commentElement) {
               const commentTextElement = commentElement.querySelector('.comment-text');
+              const needsTruncation = commentText.length > 150;
+              
               if (commentTextElement) {
+                // Remove existing classes and set them based on the new state
+                commentTextElement.className = 'comment-text';
+                if (needsTruncation) {
+                  commentTextElement.classList.add('truncated-text');
+                }
                 commentTextElement.textContent = commentText;
+              }
+
+              // Handle see more button
+              let seeMoreBtn = commentElement.querySelector('.comment-see-more');
+
+              if (needsTruncation) {
+                if (!seeMoreBtn) {
+                  // Create new see more button if it doesn't exist
+                  seeMoreBtn = document.createElement('span');
+                  seeMoreBtn.className = 'comment-see-more';
+                  seeMoreBtn.textContent = 'See more...';
+
+                  // Add see more functionality
+                  seeMoreBtn.addEventListener('click', function () {
+                    commentTextElement.classList.toggle('expanded');
+                    this.textContent = commentTextElement.classList.contains('expanded') ? 'See less' : 'See more...';
+                  });
+
+                  // Insert after the comment text element
+                  commentTextElement.after(seeMoreBtn);
+                }
+              } else if (seeMoreBtn) {
+                // Remove see more button if it's not needed anymore
+                seeMoreBtn.remove();
               }
             }
             
@@ -1037,9 +1124,61 @@
             // Update the post in the UI
             const postItem = document.querySelector(`li[data-post-id="${postId}"]`);
             if (postItem) {
-              // Update only the post content, preserving all other elements
-              const postContent = postItem.querySelector('strong').nextSibling;
-              postContent.textContent = postText;
+              // Store the original username element
+              const originalUsername = postItem.querySelector('strong').outerHTML;
+              const mediaElement = postItem.querySelector('.media-container');
+              const reactionsDiv = postItem.querySelector('.post-reactions');
+
+              // Create a temporary div to hold the structure
+              const tempDiv = document.createElement('div');
+              tempDiv.innerHTML = originalUsername;
+
+              // Create the post-content with truncated text and see more button
+              const postContent = document.createElement('div');
+              postContent.className = 'post-content';
+
+              // Only add text and see more button if there is text content
+              if (postText && postText.trim().length > 0) {
+                const truncatedText = document.createElement('div');
+                truncatedText.className = 'truncated-text';
+                truncatedText.textContent = postText;
+
+                const seeMoreBtn = document.createElement('span');
+                seeMoreBtn.className = 'see-more-btn';
+                seeMoreBtn.textContent = 'See more...';
+
+                // If text is less than 150 characters, hide the see more button
+                if (postText.length < 150) {
+                  seeMoreBtn.classList.add('hidden');
+                }
+
+                // Add click event to see more button
+                seeMoreBtn.addEventListener('click', function () {
+                  truncatedText.classList.toggle('expanded');
+                  this.textContent = truncatedText.classList.contains('expanded') ? 'See less' : 'See more...';
+                });
+
+                postContent.appendChild(truncatedText);
+                postContent.appendChild(seeMoreBtn);
+              }
+
+              tempDiv.appendChild(postContent);
+
+              // Re-add the media element if it exists
+              if (mediaElement) {
+                tempDiv.appendChild(mediaElement);
+              }
+
+              // Re-add the reactions div
+              if (reactionsDiv) {
+                tempDiv.appendChild(reactionsDiv);
+              }
+
+              // Clear the post item and add the updated content
+              postItem.innerHTML = '';
+              while (tempDiv.firstChild) {
+                postItem.appendChild(tempDiv.firstChild);
+              }
             }
 
             // Close the modal
