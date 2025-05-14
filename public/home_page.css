@@ -175,6 +175,12 @@ nav.sidebar {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
   font-size: 18px;
   transition: all 0.3s ease;
+  word-wrap: break-word; /* Break long words */
+  word-break: break-word; /* Ensure long words break */
+  overflow-wrap: break-word; /* Ensure text wraps within the container */
+  white-space: normal; /* Allow text to wrap to the next line */
+  overflow: hidden; /* Prevent content from overflowing */
+  text-overflow: ellipsis; /* Add ellipsis for overflowed text if needed */
 }
 
 .todo-container li:hover {
