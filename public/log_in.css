@@ -187,8 +187,38 @@ main section .login-form {
     transition: opacity 0.3s;
   }
   
-  .toggle-password:hover img {
-    opacity: 1;
-  }
 
-}
+  .polygon-shape {
+   width: 60px;
+   height: 60px;
+   background: black; 
+   border-radius: 0;
+   clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   color: white; 
+   font-weight: bold;
+   font-size: 14px;
+  }
+  
+  /* Back button styling */
+  .back-btn {
+    position: fixed;
+    bottom: 30px;
+    left: 30px;
+    padding: 10px 20px;
+    background-color: #000000;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+  }
+  
+  .back-btn:hover {
+    transform: translateY(-2px);
+    background-color: #333333;
+  }
+  
+

@@ -72,12 +72,26 @@
         const passwordInput = document.getElementById(inputId);
         const icon = document.getElementById(inputId + '-toggle-icon');
 
-        if (passwordInput.type === 'password') {
-            passwordInput.type = 'text';
-            icon.src = '/assets/eye-off.svg';
-        } else {
-            passwordInput.type = 'password';
-            icon.src = '/assets/eye.svg';
+
+                    <input class="polygon-shape" type="submit" value="SPY">
+                </div>
+            </form>
+        </section>
+    </main>
+    <a href="/" class="back-btn">Back</a>
+    <script>
+        function togglePassword(inputId) {
+            const passwordInput = document.getElementById(inputId);
+            const icon = document.getElementById(inputId + '-toggle-icon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.src = '/assets/eye-off.svg';
+            } else {
+                passwordInput.type = 'password';
+                icon.src = '/assets/eye.svg';
+            }
+
         }
     }
 </script>
