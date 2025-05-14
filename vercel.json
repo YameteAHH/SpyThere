@@ -3,14 +3,14 @@
     "buildCommand": "npm install",
     "outputDirectory": ".",
     "functions": {
-        "index.js": {
+        "api/index.js": {
             "includeFiles": "views/**"
         }
     },
     "routes": [
         {
             "src": "/(.*)",
-            "dest": "index.js"
+            "dest": "/api"
         }
     ]
 }

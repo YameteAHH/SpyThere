@@ -829,7 +829,12 @@ app.delete('/api/posts/:postId', authenticator, async (req, res) => {
   }
 });
 
-// Start server
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-});
+// Only start the server directly if this file is run directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}`);
+  });
+}
+
+// Export the app for use in serverless environments
+export { app };

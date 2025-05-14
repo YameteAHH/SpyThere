@@ -73,6 +73,23 @@ Note: For production, configure more restrictive rules based on authentication.
 
 ## Step 4: Configure Your Vercel Setup
 
+### File Structure for Vercel
+
+Vercel requires serverless functions to be in an `api` directory. Make sure your project has:
+
+1. A main `index.js` file that exports your Express app:
+```javascript
+// At the end of your main index.js
+export { app };
+```
+
+2. An `api/index.js` file that imports and uses the app:
+```javascript
+import { app } from '../index.js';
+
+export default app;
+```
+
 ### Update vercel.json
 
 Make sure your vercel.json contains the following configuration to properly include EJS views:
@@ -83,14 +100,14 @@ Make sure your vercel.json contains the following configuration to properly incl
   "buildCommand": "npm install",
   "outputDirectory": ".",
   "functions": {
-    "index.js": {
+    "api/index.js": {
       "includeFiles": "views/**"
     }
   },
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "index.js"
+      "dest": "/api"
     }
   ]
 }
