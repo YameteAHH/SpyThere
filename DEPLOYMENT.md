@@ -82,23 +82,17 @@ Make sure your vercel.json contains the following configuration to properly incl
   "version": 2,
   "buildCommand": "npm install",
   "outputDirectory": ".",
-  "builds": [
-    {
-      "src": "index.js",
-      "use": "@vercel/node"
+  "functions": {
+    "index.js": {
+      "includeFiles": "views/**"
     }
-  ],
+  },
   "routes": [
     {
       "src": "/(.*)",
       "dest": "index.js"
     }
-  ],
-  "functions": {
-    "index.js": {
-      "includeFiles": "views/**"
-    }
-  }
+  ]
 }
 ```
 
