@@ -23,7 +23,7 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
-app.use(express.json()); // Add JSON middleware for API endpoints
+app.use(express.json());
 
 // Configure multer for handling file uploads
 const upload = multer({
