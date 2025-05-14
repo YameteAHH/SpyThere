@@ -1037,56 +1037,9 @@
             // Update the post in the UI
             const postItem = document.querySelector(`li[data-post-id="${postId}"]`);
             if (postItem) {
-              // Preserve the post structure with reactions
-              const username = postItem.querySelector('strong').textContent;
-              const likeCount = postItem.querySelector('.like-count').textContent;
-              const commentCount = postItem.querySelector('.comment-count').textContent;
-              const likeBtn = postItem.querySelector('.like-btn');
-              const likedStatus = likeBtn ? likeBtn.dataset.liked : 'false';
-              const likeIconSrc = likedStatus === 'true'
-                ? window.location.origin + '/assets/Liked_Icon.png'
-                : window.location.origin + '/assets/Like_Icon.png';
-
-              postItem.innerHTML = `
-                <strong>${username}</strong>
-                ${postText}
-                <div class="post-reactions">
-                  <div class="like-wrapper">
-                    <img src="${likeIconSrc}" alt="${likedStatus === 'true' ? 'Unlike' : 'Like'}" class="reaction-icon like-btn" data-liked="${likedStatus}" data-post-id="${postId}">
-                    <span class="like-count" data-post-id="${postId}">${likeCount}</span>
-                  </div>
-                  <div class="comment-wrapper">
-                    <img src="/assets/Comment_Icon.png" alt="Comment" class="reaction-icon comment-btn">
-                    <span class="comment-count" data-post-id="${postId}">${commentCount}</span>
-                  </div>
-                  <img src="/assets/Share_Icon.png" alt="Share" class="reaction-icon">
-                  <div class="post-actions-container">
-                    <img src="/assets/Edit_Icon.png" alt="Edit" class="reaction-icon edit-post-btn">
-                    <img src="/assets/Delete_Icon.png" alt="Delete" class="reaction-icon delete-post-btn">
-                  </div>
-                </div>
-              `;
-
-              // Re-attach event listeners to this specific post
-              initializePostEventListeners(postItem);
-
-              // Check if we need to update the like button status from server
-              const newLikeBtn = postItem.querySelector('.like-btn');
-              if (newLikeBtn) {
-                // Update like status from the server to be sure
-                fetch(`/api/likes/${postId}`)
-                  .then(response => response.json())
-                  .then(data => {
-                    const userLiked = data.userLiked || false;
-                    newLikeBtn.dataset.liked = userLiked.toString();
-                    newLikeBtn.src = userLiked
-                      ? window.location.origin + '/assets/Liked_Icon.png'
-                      : window.location.origin + '/assets/Like_Icon.png';
-                    newLikeBtn.alt = userLiked ? 'Unlike' : 'Like';
-                    console.log('Updated like button state for post', postId, 'userLiked:', userLiked, 'image src:', newLikeBtn.src);
-                  })
-                  .catch(error => console.error('Error fetching like status:', error));
-              }
+              // Update only the post content, preserving all other elements
+              const postContent = postItem.querySelector('strong').nextSibling;
+              postContent.textContent = postText;
             }
 
             // Close the modal
