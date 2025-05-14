@@ -7,6 +7,8 @@ import dotenv from 'dotenv';
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import session from 'express-session';
+import cookieParser from 'cookie-parser';
 
 // Load environment variables
 dotenv.config();
@@ -24,6 +26,19 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(cookieParser());
+
+// Session configuration
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'spythere-secret-key',
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    httpOnly: true
+  }
+}));
 
 // Configure multer for handling file uploads
 const upload = multer({
@@ -71,16 +86,9 @@ const postsRef = ref(db, 'posts');
 const commentsRef = ref(db, 'comments');
 const likesRef = ref(db, 'likes');
 
-// Session storage
-const userSession = {
-  email: '',
-  password: '',
-  username: '',
-};
-
-// Auth middleware
+// Auth middleware using express-session
 function authenticator(req, res, next) {
-  if (userSession.email && userSession.password) {
+  if (req.session && req.session.user) {
     next();
   } else {
     res.redirect('/login');
@@ -100,9 +108,12 @@ app.post('/login', async (req, res) => {
     const snapshot = await get(userRef);
 
     if (snapshot.exists() && snapshot.val().password === password) {
-      userSession.email = email;
-      userSession.password = password;
-      userSession.username = snapshot.val().username;
+      // Store user in session
+      req.session.user = {
+        email: email,
+        username: snapshot.val().username
+      };
+
       return res.redirect('/home');
     }
     res.render('log_in.ejs', { error: 'Invalid email or password' });
@@ -110,6 +121,13 @@ app.post('/login', async (req, res) => {
     console.error('Login error:', error);
     res.status(500).send('Server error');
   }
+});
+
+app.get('/logout', (req, res) => {
+  req.session.destroy(err => {
+    if (err) console.error('Error destroying session:', err);
+    res.redirect('/login');
+  });
 });
 
 app.get('/signup', (req, res) => res.render('sign_up.ejs'));
@@ -156,8 +174,8 @@ app.get('/home', authenticator, async (req, res) => {
       return post;
     });
     
-    // Check if the user has already liked any posts
-    const username = userSession.username;
+    // Get username from session
+    const username = req.session.user.username;
     const apiVersion = 1; // Increment this when API changes
     
     res.render('home_page.ejs', { 
@@ -213,7 +231,7 @@ app.post('/submit-post', authenticator, upload.single('media'), async (req, res)
     console.log('Saving to database...');
     const newPost = {
       post: post ? post.trim() : '',
-      username: userSession.username || 'Anonymous',
+      username: req.session.user.username || 'Anonymous',
       mediaUrl: mediaUrl,
       timestamp: Date.now()
     };
@@ -247,19 +265,19 @@ app.get('/profile', authenticator, async (req, res) => {
           username: value.username || 'Anonymous',
           mediaUrl: value.mediaUrl || null
         }))
-        .filter(post => post.username === userSession.username)
+        .filter(post => post.username === req.session.user.username)
         .reverse();
     }
     res.render('profile_page.ejs', { 
-      username: userSession.username, 
-      email: userSession.email,
+      username: req.session.user.username,
+      email: req.session.user.email,
       posts 
     });
   } catch (error) {
     console.error('Error:', error);
     res.render('profile_page.ejs', { 
-      username: userSession.username, 
-      email: userSession.email,
+      username: req.session.user.username,
+      email: req.session.user.email,
       posts: [] 
     });
   }
@@ -269,18 +287,18 @@ app.get('/profile', authenticator, async (req, res) => {
 app.post('/update-profile', authenticator, async (req, res) => {
   try {
     const { username, email, currentPassword } = req.body;
-    const oldUsername = userSession.username;
+    const oldUsername = req.session.user.username;
     
     // Verify current password
-    const oldEmail = userSession.email;
+    const oldEmail = req.session.user.email;
     const sanitizedOldEmail = oldEmail.replace(/\./g, '_');
     const userRef = child(ref(db, 'users'), sanitizedOldEmail);
     const snapshot = await get(userRef);
     
     if (!snapshot.exists() || snapshot.val().password !== currentPassword) {
       return res.render('profile_page.ejs', { 
-        username: userSession.username, 
-        email: userSession.email,
+        username: req.session.user.username,
+        email: req.session.user.email,
         posts: [],
         error: 'Invalid password. Changes not saved.'
       });
@@ -388,8 +406,8 @@ app.post('/update-profile', authenticator, async (req, res) => {
       const newEmailSnapshot = await get(newUserRef);
       if (newEmailSnapshot.exists()) {
         return res.render('profile_page.ejs', { 
-          username: userSession.username, 
-          email: userSession.email,
+          username: req.session.user.username,
+          email: req.session.user.email,
           posts: [],
           error: 'Email already exists. Please choose a different one.'
         });
@@ -402,8 +420,8 @@ app.post('/update-profile', authenticator, async (req, res) => {
       await remove(userRef);
       
       // Update session data
-      userSession.email = email;
-      userSession.username = username;
+      req.session.user.email = email;
+      req.session.user.username = username;
       
       // Redirect to updated profile page with success message
       return res.render('profile_page.ejs', { 
@@ -418,7 +436,7 @@ app.post('/update-profile', authenticator, async (req, res) => {
     await update(userRef, { username });
     
     // Update session
-    userSession.username = username;
+    req.session.user.username = username;
     
     // Redirect to updated profile page with success message
     return res.render('profile_page.ejs', { 
@@ -431,8 +449,8 @@ app.post('/update-profile', authenticator, async (req, res) => {
   } catch (error) {
     console.error('Error updating profile:', error);
     res.status(500).render('profile_page.ejs', { 
-      username: userSession.username, 
-      email: userSession.email,
+      username: req.session.user.username,
+      email: req.session.user.email,
       posts: [],
       error: 'Error updating profile: ' + error.message
     });
@@ -440,7 +458,7 @@ app.post('/update-profile', authenticator, async (req, res) => {
 });
 
 app.get('/api/username', (req, res) => {
-  res.json({ username: userSession.username || 'Anonymous' });
+  res.json({ username: req.session.user.username || 'Anonymous' });
 });
 
 // Comment API Routes
@@ -461,7 +479,7 @@ app.post('/api/comments', authenticator, async (req, res) => {
     const newComment = {
       postId: decodedPostId,
       text: text.trim(),
-      author: userSession.username,
+      author: req.session.user.username,
       timestamp: Date.now()
     };
     
@@ -554,7 +572,7 @@ app.put('/api/comments/:postId/:commentId', authenticator, async (req, res) => {
     const comment = snapshot.val();
     
     // Check if the current user is the author of the comment
-    if (comment.author !== userSession.username) {
+    if (comment.author !== req.session.user.username) {
       return res.status(403).json({ error: 'You can only edit your own comments' });
     }
     
@@ -607,7 +625,7 @@ app.delete('/api/comments/:postId/:commentId', authenticator, async (req, res) =
     const comment = snapshot.val();
     
     // Check if the current user is the author of the comment
-    if (comment.author !== userSession.username) {
+    if (comment.author !== req.session.user.username) {
       return res.status(403).json({ error: 'You can only delete your own comments' });
     }
     
@@ -639,7 +657,7 @@ app.post('/api/likes', authenticator, async (req, res) => {
     console.log('Decoded post ID for like:', decodedPostId);
     
     // Create a unique ID for this user's like on this post
-    const username = userSession.username;
+    const username = req.session.user.username;
     const userLikeId = username.replace(/\./g, '_'); // Sanitize the username for Firebase
     
     // Reference to this specific user's like for this post
@@ -702,7 +720,7 @@ app.get('/api/likes/:postId', async (req, res) => {
       }));
       
       // Check if current user has liked this post
-      const username = userSession.username;
+      const username = req.session.user.username;
       const userLikeId = username.replace(/\./g, '_');
       userLiked = data[userLikeId] !== undefined;
       
@@ -751,7 +769,7 @@ app.put('/api/posts/:postId', authenticator, async (req, res) => {
     const post = snapshot.val();
 
     // Check if the current user is the author of the post
-    if (post.username !== userSession.username) {
+    if (post.username !== req.session.user.username) {
       return res.status(403).json({ error: 'You can only edit your own posts' });
     }
 
@@ -806,7 +824,7 @@ app.delete('/api/posts/:postId', authenticator, async (req, res) => {
     const post = snapshot.val();
 
     // Check if the current user is the author of the post
-    if (post.username !== userSession.username) {
+    if (post.username !== req.session.user.username) {
       return res.status(403).json({ error: 'You can only delete your own posts' });
     }
 
