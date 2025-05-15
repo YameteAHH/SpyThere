@@ -9,6 +9,10 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import session from 'express-session';
 import cookieParser from 'cookie-parser';
+import MemoryStore from 'memorystore';
+
+// Create a memorystore session store
+const MemoryStoreSession = MemoryStore(session);
 
 // Load environment variables
 dotenv.config();
@@ -20,6 +24,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Trust proxy for secure cookies in production
+app.set('trust proxy', 1);
+
 // Middleware
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -28,15 +35,19 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 
-// Session configuration
+// Session configuration with memorystore
 app.use(session({
+  store: new MemoryStoreSession({
+    checkPeriod: 86400000 // Prune expired entries every 24h
+  }),
   secret: process.env.SESSION_SECRET || 'spythere-secret-key',
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false, // Changed to false to prevent empty sessions
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+    secure: process.env.NODE_ENV === 'production',
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    httpOnly: true
+    httpOnly: true,
+    sameSite: 'lax'
   }
 }));
 
@@ -86,11 +97,27 @@ const postsRef = ref(db, 'posts');
 const commentsRef = ref(db, 'comments');
 const likesRef = ref(db, 'likes');
 
-// Auth middleware using express-session
+// Auth middleware with additional validation
 function authenticator(req, res, next) {
+  console.log('Checking authentication...');
+  console.log('Session exists:', !!req.session);
+  console.log('Session ID:', req.session?.id);
+  console.log('User in session:', !!req.session?.user);
+
+  // Check for authentication
   if (req.session && req.session.user) {
+    console.log('User authenticated via session:', req.session.user.username);
     next();
   } else {
+    // Try fallback to cookie authentication (if user's session was lost)
+    const authToken = req.cookies.authToken;
+    if (authToken) {
+      console.log('Session missing, but auth cookie found. Redirecting to re-authenticate');
+      // Simply redirect to login - the user will need to login again
+      // This is safer than trying to restore the session from just the cookie
+    }
+
+    console.log('Authentication failed, redirecting to login');
     res.redirect('/login');
   }
 }
@@ -102,24 +129,57 @@ app.get('/login', (req, res) => res.render('log_in.ejs', { error: null }));
 
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
+  console.log('Login attempt for email:', email);
+
   try {
     const sanitizedEmail = email.replace(/\./g, '_');
+    console.log('Sanitized email for Firebase lookup:', sanitizedEmail);
+
     const userRef = child(ref(db, 'users'), sanitizedEmail);
     const snapshot = await get(userRef);
+    console.log('User found in database:', snapshot.exists());
 
     if (snapshot.exists() && snapshot.val().password === password) {
-      // Store user in session
+      const userData = snapshot.val();
+      console.log('Password verified for user:', userData.username);
+
+      // Create a secure session token
+      const sessionToken = uuidv4();
+
+      // Store user data in session
       req.session.user = {
         email: email,
-        username: snapshot.val().username
+        username: userData.username,
+        sessionToken: sessionToken
       };
 
-      return res.redirect('/home');
+      console.log('Session created with ID:', req.session.id);
+
+      // Also set a backup cookie for additional authentication
+      res.cookie('authToken', sessionToken, {
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax'
+      });
+
+      // Explicitly save session before redirecting
+      req.session.save((err) => {
+        if (err) {
+          console.error('Error saving session:', err);
+          return res.status(500).render('log_in.ejs', { error: 'Session error: ' + err.message });
+        }
+
+        console.log('Session saved successfully, redirecting to /home');
+        return res.redirect('/home');
+      });
+    } else {
+      console.log('Login failed: Invalid credentials');
+      res.render('log_in.ejs', { error: 'Invalid email or password' });
     }
-    res.render('log_in.ejs', { error: 'Invalid email or password' });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).send('Server error');
+    res.status(500).render('log_in.ejs', { error: 'Server error: ' + error.message });
   }
 });
 
@@ -153,16 +213,22 @@ app.post('/signup', async (req, res) => {
 
 app.get('/home', authenticator, async (req, res) => {
   try {
+    console.log('Home page request for user:', req.session.user.username);
+
     const snapshot = await get(postsRef);
     let posts = [];
     if (snapshot.exists()) {
       const data = snapshot.val();
+      console.log('Posts retrieved from Firebase:', Object.keys(data).length);
+
       posts = Object.entries(data).map(([id, value]) => ({
         id,
         value: value.post || value,
         username: value.username || 'Anonymous',
         mediaUrl: value.mediaUrl || null,
       })).reverse();
+    } else {
+      console.log('No posts found in database');
     }
     
     // Ensure every post has a valid ID for the comments API
@@ -178,14 +244,17 @@ app.get('/home', authenticator, async (req, res) => {
     const username = req.session.user.username;
     const apiVersion = 1; // Increment this when API changes
     
+    console.log('Rendering home page with', posts.length, 'posts for user', username);
+
     res.render('home_page.ejs', { 
       posts, 
       username: username,
       apiVersion: apiVersion
     });
   } catch (error) {
-    console.error('Error fetching posts:', error);
-    res.status(500).send('Error fetching posts.');
+    console.error('Error loading home page:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).send('Error loading home page: ' + error.message);
   }
 });
 
