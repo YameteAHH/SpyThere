@@ -9,6 +9,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import session from 'express-session';
 import cookieParser from 'cookie-parser';
+import app from './api/index.js';
 
 // Load environment variables
 dotenv.config();
@@ -17,7 +18,6 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const app = express();
 const port = process.env.PORT || 3000;
 
 // Middleware
@@ -847,12 +847,11 @@ app.delete('/api/posts/:postId', authenticator, async (req, res) => {
   }
 });
 
-// Only start the server directly if this file is run directly
+// If this file is executed directly (not imported), start the server
 if (import.meta.url === `file://${process.argv[1]}`) {
   app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
   });
 }
 
-// Export the app for use in serverless environments
 export { app };
