@@ -97,9 +97,25 @@ const postsRef = ref(db, 'posts');
 const commentsRef = ref(db, 'comments');
 const likesRef = ref(db, 'likes');
 
-// Auth middleware with additional validation
+// Helper function to check authentication without redirecting
+function isAuthenticated(req, res) {
+  if (req.session && req.session.user) {
+    return true;
+  }
+
+  // Try fallback to cookie authentication
+  const authToken = req.cookies.authToken;
+  if (authToken) {
+    // If we have an auth token but no session, create a temporary response
+    return false;
+  }
+
+  return false;
+}
+
+// Modify the authenticator middleware to be more flexible for API requests
 function authenticator(req, res, next) {
-  console.log('Checking authentication...');
+  console.log('Checking authentication for path:', req.path);
   console.log('Session exists:', !!req.session);
   console.log('Session ID:', req.session?.id);
   console.log('User in session:', !!req.session?.user);
@@ -109,12 +125,10 @@ function authenticator(req, res, next) {
     console.log('User authenticated via session:', req.session.user.username);
     next();
   } else {
-    // Try fallback to cookie authentication (if user's session was lost)
-    const authToken = req.cookies.authToken;
-    if (authToken) {
-      console.log('Session missing, but auth cookie found. Redirecting to re-authenticate');
-      // Simply redirect to login - the user will need to login again
-      // This is safer than trying to restore the session from just the cookie
+    // For API requests, return JSON error instead of redirecting
+    if (req.path.startsWith('/api/')) {
+      console.log('API request failed authentication');
+      return res.status(401).json({ error: 'Authentication required', redirect: '/login' });
     }
 
     console.log('Authentication failed, redirecting to login');
@@ -258,9 +272,14 @@ app.get('/home', authenticator, async (req, res) => {
   }
 });
 
-app.post('/submit-post', authenticator, upload.single('media'), async (req, res) => {
+app.post('/submit-post', upload.single('media'), async (req, res) => {
+  // Check authentication
+  if (!req.session || !req.session.user) {
+    return res.redirect('/login');
+  }
+
   try {
-    console.log('Received post submission request');
+    console.log('Received post submission request from user:', req.session.user.username);
     console.log('Request body:', req.body);
     console.log('File:', req.file);
 
@@ -300,7 +319,7 @@ app.post('/submit-post', authenticator, upload.single('media'), async (req, res)
     console.log('Saving to database...');
     const newPost = {
       post: post ? post.trim() : '',
-      username: req.session.user.username || 'Anonymous',
+      username: req.session.user.username,
       mediaUrl: mediaUrl,
       timestamp: Date.now()
     };
@@ -308,6 +327,9 @@ app.post('/submit-post', authenticator, upload.single('media'), async (req, res)
 
     await push(postsRef, newPost);
     console.log('Post saved successfully');
+
+    // Touch the session to keep it alive
+    req.session.touch();
 
     res.redirect('/home');
   } catch (error) {
@@ -323,6 +345,11 @@ app.post('/submit-post', authenticator, upload.single('media'), async (req, res)
 
 app.get('/profile', authenticator, async (req, res) => {
   try {
+    console.log('Profile page requested for user:', req.session.user.username);
+
+    // Refresh the session to extend its lifetime
+    req.session.touch();
+
     const snapshot = await get(postsRef);
     let posts = [];
     if (snapshot.exists()) {
@@ -336,18 +363,31 @@ app.get('/profile', authenticator, async (req, res) => {
         }))
         .filter(post => post.username === req.session.user.username)
         .reverse();
+
+      console.log(`Found ${posts.length} posts for user ${req.session.user.username}`);
+    } else {
+      console.log('No posts found in database for profile page');
     }
-    res.render('profile_page.ejs', { 
-      username: req.session.user.username,
-      email: req.session.user.email,
-      posts 
+
+    // Save session before rendering to ensure it persists
+    req.session.save((err) => {
+      if (err) {
+        console.error('Error saving session in profile page:', err);
+      }
+
+      res.render('profile_page.ejs', {
+        username: req.session.user.username,
+        email: req.session.user.email,
+        posts
+      });
     });
   } catch (error) {
-    console.error('Error:', error);
-    res.render('profile_page.ejs', { 
+    console.error('Error in profile page:', error);
+    res.status(500).render('profile_page.ejs', { 
       username: req.session.user.username,
       email: req.session.user.email,
-      posts: [] 
+      posts: [],
+      error: 'Error loading profile: ' + error.message
     });
   }
 });
@@ -527,11 +567,26 @@ app.post('/update-profile', authenticator, async (req, res) => {
 });
 
 app.get('/api/username', (req, res) => {
-  res.json({ username: req.session.user.username || 'Anonymous' });
+  if (req.session && req.session.user) {
+    // Touch the session to keep it alive
+    req.session.touch();
+
+    res.json({ username: req.session.user.username });
+  } else {
+    res.status(401).json({
+      error: 'Not authenticated',
+      redirect: '/login'
+    });
+  }
 });
 
 // Comment API Routes
-app.post('/api/comments', authenticator, async (req, res) => {
+app.post('/api/comments', async (req, res) => {
+  // First check authentication
+  if (!isAuthenticated(req, res)) {
+    return res.status(401).json({ error: 'Authentication required', redirect: '/login' });
+  }
+
   try {
     const { postId, text } = req.body;
     
@@ -564,6 +619,9 @@ app.post('/api/comments', authenticator, async (req, res) => {
     
     console.log('Comment saved successfully');
     
+    // Refresh session
+    req.session.touch();
+
     res.status(201).json({ 
       id: newCommentRef.key,
       ...newComment
@@ -603,6 +661,11 @@ app.get('/api/comments/:postId', async (req, res) => {
       console.log(`No comments found for post ${decodedPostId}`);
     }
     
+    // If user is authenticated, refresh their session
+    if (req.session && req.session.user) {
+      req.session.touch();
+    }
+
     res.json({ comments });
   } catch (error) {
     console.error('Error fetching comments:', error);
@@ -611,7 +674,12 @@ app.get('/api/comments/:postId', async (req, res) => {
 });
 
 // Update a comment
-app.put('/api/comments/:postId/:commentId', authenticator, async (req, res) => {
+app.put('/api/comments/:postId/:commentId', async (req, res) => {
+  // Check authentication
+  if (!isAuthenticated(req, res)) {
+    return res.status(401).json({ error: 'Authentication required', redirect: '/login' });
+  }
+
   try {
     const { postId, commentId } = req.params;
     const { text } = req.body;
@@ -661,6 +729,9 @@ app.put('/api/comments/:postId/:commentId', authenticator, async (req, res) => {
     
     console.log('Comment updated successfully');
     
+    // Refresh session
+    req.session.touch();
+
     res.json(updatedComment);
   } catch (error) {
     console.error('Error updating comment:', error);
@@ -669,7 +740,12 @@ app.put('/api/comments/:postId/:commentId', authenticator, async (req, res) => {
 });
 
 // Delete a comment
-app.delete('/api/comments/:postId/:commentId', authenticator, async (req, res) => {
+app.delete('/api/comments/:postId/:commentId', async (req, res) => {
+  // Check authentication
+  if (!isAuthenticated(req, res)) {
+    return res.status(401).json({ error: 'Authentication required', redirect: '/login' });
+  }
+
   try {
     const { postId, commentId } = req.params;
     
@@ -703,6 +779,9 @@ app.delete('/api/comments/:postId/:commentId', authenticator, async (req, res) =
     
     console.log('Comment deleted successfully');
     
+    // Refresh session
+    req.session.touch();
+
     res.json({ success: true, message: 'Comment deleted successfully' });
   } catch (error) {
     console.error('Error deleting comment:', error);
@@ -711,7 +790,12 @@ app.delete('/api/comments/:postId/:commentId', authenticator, async (req, res) =
 });
 
 // Like API Routes
-app.post('/api/likes', authenticator, async (req, res) => {
+app.post('/api/likes', async (req, res) => {
+  // First check authentication
+  if (!isAuthenticated(req, res)) {
+    return res.status(401).json({ error: 'Authentication required', redirect: '/login' });
+  }
+
   try {
     const { postId, liked } = req.body;
     
@@ -750,6 +834,9 @@ app.post('/api/likes', authenticator, async (req, res) => {
     const snapshot = await get(postLikesRef);
     const likeCount = snapshot.exists() ? Object.keys(snapshot.val()).length : 0;
     
+    // Refresh session
+    req.session.touch();
+
     res.json({ 
       success: true,
       liked: liked,
@@ -789,9 +876,14 @@ app.get('/api/likes/:postId', async (req, res) => {
       }));
       
       // Check if current user has liked this post
-      const username = req.session.user.username;
-      const userLikeId = username.replace(/\./g, '_');
-      userLiked = data[userLikeId] !== undefined;
+      if (req.session && req.session.user) {
+        const username = req.session.user.username;
+        const userLikeId = username.replace(/\./g, '_');
+        userLiked = data[userLikeId] !== undefined;
+
+        // Touch the session to keep it alive
+        req.session.touch();
+      }
       
       console.log(`Found ${likes.length} likes for post ${decodedPostId}`);
     } else {
@@ -809,7 +901,12 @@ app.get('/api/likes/:postId', async (req, res) => {
 });
 
 // Post API Routes
-app.put('/api/posts/:postId', authenticator, async (req, res) => {
+app.put('/api/posts/:postId', async (req, res) => {
+  // Check authentication
+  if (!isAuthenticated(req, res)) {
+    return res.status(401).json({ error: 'Authentication required', redirect: '/login' });
+  }
+
   try {
     const { postId } = req.params;
     const { value } = req.body;
@@ -861,6 +958,9 @@ app.put('/api/posts/:postId', authenticator, async (req, res) => {
 
     console.log('Post updated successfully');
 
+    // Refresh session
+    req.session.touch();
+
     res.json(updatedPost);
   } catch (error) {
     console.error('Error updating post:', error);
@@ -869,7 +969,12 @@ app.put('/api/posts/:postId', authenticator, async (req, res) => {
 });
 
 // Delete a post
-app.delete('/api/posts/:postId', authenticator, async (req, res) => {
+app.delete('/api/posts/:postId', async (req, res) => {
+  // Check authentication
+  if (!isAuthenticated(req, res)) {
+    return res.status(401).json({ error: 'Authentication required', redirect: '/login' });
+  }
+
   try {
     const { postId } = req.params;
 
@@ -909,10 +1014,34 @@ app.delete('/api/posts/:postId', authenticator, async (req, res) => {
 
     console.log('Post and associated data deleted successfully');
 
+    // Refresh session
+    req.session.touch();
+
     res.json({ success: true, message: 'Post deleted successfully' });
   } catch (error) {
     console.error('Error deleting post:', error);
     res.status(500).json({ error: 'Failed to delete post: ' + error.message });
+  }
+});
+
+// Add a route to validate session status
+app.get('/api/session-status', (req, res) => {
+  if (req.session && req.session.user) {
+    // Touch the session to keep it alive
+    req.session.touch();
+
+    // Return user info without sensitive data
+    res.json({
+      authenticated: true,
+      username: req.session.user.username,
+      sessionId: req.session.id
+    });
+  } else {
+    // Not authenticated
+    res.json({
+      authenticated: false,
+      message: 'User not authenticated'
+    });
   }
 });
 
