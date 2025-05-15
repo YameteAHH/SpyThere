@@ -38,11 +38,14 @@ app.use(cookieParser());
 // Session configuration with memorystore
 app.use(session({
   store: new MemoryStoreSession({
-    checkPeriod: 86400000 // Prune expired entries every 24h
+    checkPeriod: 86400000, // Prune expired entries every 24h
+    stale: false, // Don't delete stale sessions
+    ttl: 30 * 24 * 60 * 60 * 1000 // 30 days in milliseconds
   }),
   secret: process.env.SESSION_SECRET || 'spythere-secret-key',
-  resave: false,
-  saveUninitialized: false, // Changed to false to prevent empty sessions
+  resave: true, // Change to true to ensure session is saved on every request
+  saveUninitialized: false,
+  rolling: true, // Reset cookie expiration on every response
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
@@ -97,41 +100,45 @@ const postsRef = ref(db, 'posts');
 const commentsRef = ref(db, 'comments');
 const likesRef = ref(db, 'likes');
 
-// Helper function to check authentication without redirecting
-function isAuthenticated(req, res) {
-  if (req.session && req.session.user) {
+// Improved isAuthenticated function with better session validation
+function isAuthenticated(req) {
+  // Check for valid session
+  if (req.session && req.session.user && req.session.user.username) {
+    console.log(`User ${req.session.user.username} is authenticated via session`);
     return true;
   }
 
-  // Try fallback to cookie authentication
-  const authToken = req.cookies.authToken;
-  if (authToken) {
-    // If we have an auth token but no session, create a temporary response
-    return false;
-  }
-
+  console.log('Session validation failed');
   return false;
 }
 
-// Modify the authenticator middleware to be more flexible for API requests
+// More reliable authenticator middleware for all routes
 function authenticator(req, res, next) {
-  console.log('Checking authentication for path:', req.path);
-  console.log('Session exists:', !!req.session);
-  console.log('Session ID:', req.session?.id);
-  console.log('User in session:', !!req.session?.user);
+  console.log(`Authentication check for ${req.path}`);
+  console.log(`Session ID: ${req.session?.id || 'no session'}`);
+  console.log(`Has user object: ${!!(req.session && req.session.user)}`);
 
-  // Check for authentication
-  if (req.session && req.session.user) {
-    console.log('User authenticated via session:', req.session.user.username);
+  if (req.session && req.session.user && req.session.user.username) {
+    console.log(`User authenticated: ${req.session.user.username}`);
+
+    // Extend session life
+    req.session.touch();
+    req.session._garbage = Date.now();
+    req.session.cookie.expires = new Date(Date.now() + (30 * 24 * 60 * 60 * 1000));
+
     next();
   } else {
-    // For API requests, return JSON error instead of redirecting
-    if (req.path.startsWith('/api/')) {
-      console.log('API request failed authentication');
-      return res.status(401).json({ error: 'Authentication required', redirect: '/login' });
+    // For API requests, return JSON error
+    if (req.path.startsWith('/api/') && !req.path.includes('/api/session-status')) {
+      console.log('API authentication failed');
+      return res.status(401).json({
+        error: 'Authentication required',
+        redirect: '/login'
+      });
     }
 
-    console.log('Authentication failed, redirecting to login');
+    // For page requests, redirect to login
+    console.log('Redirecting to login page');
     res.redirect('/login');
   }
 }
@@ -345,10 +352,22 @@ app.post('/submit-post', upload.single('media'), async (req, res) => {
 
 app.get('/profile', authenticator, async (req, res) => {
   try {
-    console.log('Profile page requested for user:', req.session.user.username);
+    console.log(`Profile page requested by ${req.session.user.username}`);
 
-    // Refresh the session to extend its lifetime
-    req.session.touch();
+    // Explicitly update and save session before database operations
+    req.session.cookie.expires = new Date(Date.now() + (30 * 24 * 60 * 60 * 1000));
+    await new Promise((resolve, reject) => {
+      req.session.save(err => {
+        if (err) {
+          console.error('Error saving session before profile load:', err);
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
+
+    console.log('Session extended and saved for profile page');
 
     const snapshot = await get(postsRef);
     let posts = [];
@@ -364,31 +383,23 @@ app.get('/profile', authenticator, async (req, res) => {
         .filter(post => post.username === req.session.user.username)
         .reverse();
 
-      console.log(`Found ${posts.length} posts for user ${req.session.user.username}`);
-    } else {
-      console.log('No posts found in database for profile page');
+      console.log(`Found ${posts.length} posts for user profile`);
     }
 
-    // Save session before rendering to ensure it persists
-    req.session.save((err) => {
-      if (err) {
-        console.error('Error saving session in profile page:', err);
-      }
+    // Final session check before rendering
+    if (!req.session.user) {
+      console.error('Session lost during profile page load');
+      return res.redirect('/login');
+    }
 
-      res.render('profile_page.ejs', {
-        username: req.session.user.username,
-        email: req.session.user.email,
-        posts
-      });
+    res.render('profile_page.ejs', {
+      username: req.session.user.username,
+      email: req.session.user.email,
+      posts: posts 
     });
   } catch (error) {
     console.error('Error in profile page:', error);
-    res.status(500).render('profile_page.ejs', { 
-      username: req.session.user.username,
-      email: req.session.user.email,
-      posts: [],
-      error: 'Error loading profile: ' + error.message
-    });
+    res.status(500).send('Error loading profile: ' + error.message);
   }
 });
 
@@ -581,24 +592,16 @@ app.get('/api/username', (req, res) => {
 });
 
 // Comment API Routes
-app.post('/api/comments', async (req, res) => {
-  // First check authentication
-  if (!isAuthenticated(req, res)) {
-    return res.status(401).json({ error: 'Authentication required', redirect: '/login' });
-  }
-
+app.post('/api/comments', authenticator, async (req, res) => {
   try {
     const { postId, text } = req.body;
-    
-    console.log('Received comment request:', { postId, text });
+    console.log(`Comment submission by ${req.session.user.username} for post ${postId}`);
     
     if (!postId || !text || text.trim() === '') {
       return res.status(400).json({ error: 'Post ID and comment text are required' });
     }
-    
-    // Decode the postId if it was URL encoded
+
     const decodedPostId = decodeURIComponent(postId);
-    console.log('Decoded post ID for comment:', decodedPostId);
     
     const newComment = {
       postId: decodedPostId,
@@ -606,21 +609,17 @@ app.post('/api/comments', async (req, res) => {
       author: req.session.user.username,
       timestamp: Date.now()
     };
-    
-    console.log('Creating comment:', newComment);
-    
+
     // Create a reference to the specific post's comments collection
     const postCommentsRef = ref(db, `comments/${decodedPostId}`);
     const newCommentRef = push(postCommentsRef);
-    
-    console.log('Comment reference created');
-    
+
     await set(newCommentRef, newComment);
-    
     console.log('Comment saved successfully');
     
-    // Refresh session
-    req.session.touch();
+    // Extend session
+    req.session.cookie.expires = new Date(Date.now() + (30 * 24 * 60 * 60 * 1000));
+    req.session.save();
 
     res.status(201).json({ 
       id: newCommentRef.key,
@@ -674,17 +673,12 @@ app.get('/api/comments/:postId', async (req, res) => {
 });
 
 // Update a comment
-app.put('/api/comments/:postId/:commentId', async (req, res) => {
-  // Check authentication
-  if (!isAuthenticated(req, res)) {
-    return res.status(401).json({ error: 'Authentication required', redirect: '/login' });
-  }
-
+app.put('/api/comments/:postId/:commentId', authenticator, async (req, res) => {
   try {
     const { postId, commentId } = req.params;
     const { text } = req.body;
     
-    console.log(`Updating comment ${commentId} for post ${postId}`);
+    console.log(`Updating comment ${commentId} by ${req.session.user.username}`);
     
     if (!postId || !commentId) {
       return res.status(400).json({ error: 'Post ID and Comment ID are required' });
@@ -729,8 +723,9 @@ app.put('/api/comments/:postId/:commentId', async (req, res) => {
     
     console.log('Comment updated successfully');
     
-    // Refresh session
-    req.session.touch();
+    // Extend session
+    req.session.cookie.expires = new Date(Date.now() + (30 * 24 * 60 * 60 * 1000));
+    req.session.save();
 
     res.json(updatedComment);
   } catch (error) {
@@ -740,16 +735,11 @@ app.put('/api/comments/:postId/:commentId', async (req, res) => {
 });
 
 // Delete a comment
-app.delete('/api/comments/:postId/:commentId', async (req, res) => {
-  // Check authentication
-  if (!isAuthenticated(req, res)) {
-    return res.status(401).json({ error: 'Authentication required', redirect: '/login' });
-  }
-
+app.delete('/api/comments/:postId/:commentId', authenticator, async (req, res) => {
   try {
     const { postId, commentId } = req.params;
     
-    console.log(`Deleting comment ${commentId} from post ${postId}`);
+    console.log(`Deleting comment ${commentId} by ${req.session.user.username}`);
     
     if (!postId || !commentId) {
       return res.status(400).json({ error: 'Post ID and Comment ID are required' });
@@ -779,8 +769,9 @@ app.delete('/api/comments/:postId/:commentId', async (req, res) => {
     
     console.log('Comment deleted successfully');
     
-    // Refresh session
-    req.session.touch();
+    // Extend session
+    req.session.cookie.expires = new Date(Date.now() + (30 * 24 * 60 * 60 * 1000));
+    req.session.save();
 
     res.json({ success: true, message: 'Comment deleted successfully' });
   } catch (error) {
@@ -790,24 +781,16 @@ app.delete('/api/comments/:postId/:commentId', async (req, res) => {
 });
 
 // Like API Routes
-app.post('/api/likes', async (req, res) => {
-  // First check authentication
-  if (!isAuthenticated(req, res)) {
-    return res.status(401).json({ error: 'Authentication required', redirect: '/login' });
-  }
-
+app.post('/api/likes', authenticator, async (req, res) => {
   try {
     const { postId, liked } = req.body;
-    
-    console.log('Received like request:', { postId, liked });
+    console.log(`Like action by ${req.session.user.username} for post ${postId}: ${liked}`);
     
     if (!postId) {
       return res.status(400).json({ error: 'Post ID is required' });
     }
-    
-    // Decode the postId if it was URL encoded
+
     const decodedPostId = decodeURIComponent(postId);
-    console.log('Decoded post ID for like:', decodedPostId);
     
     // Create a unique ID for this user's like on this post
     const username = req.session.user.username;
@@ -822,11 +805,9 @@ app.post('/api/likes', async (req, res) => {
         username: username,
         timestamp: Date.now()
       });
-      console.log(`User ${username} liked post ${decodedPostId}`);
     } else {
       // Remove the like
       await remove(userLikeRef);
-      console.log(`User ${username} unliked post ${decodedPostId}`);
     }
     
     // Get updated like count
@@ -834,8 +815,9 @@ app.post('/api/likes', async (req, res) => {
     const snapshot = await get(postLikesRef);
     const likeCount = snapshot.exists() ? Object.keys(snapshot.val()).length : 0;
     
-    // Refresh session
-    req.session.touch();
+    // Extend session
+    req.session.cookie.expires = new Date(Date.now() + (30 * 24 * 60 * 60 * 1000));
+    req.session.save();
 
     res.json({ 
       success: true,
@@ -901,17 +883,12 @@ app.get('/api/likes/:postId', async (req, res) => {
 });
 
 // Post API Routes
-app.put('/api/posts/:postId', async (req, res) => {
-  // Check authentication
-  if (!isAuthenticated(req, res)) {
-    return res.status(401).json({ error: 'Authentication required', redirect: '/login' });
-  }
-
+app.put('/api/posts/:postId', authenticator, async (req, res) => {
   try {
     const { postId } = req.params;
     const { value } = req.body;
 
-    console.log(`Updating post ${postId}`);
+    console.log(`Updating post ${postId} by ${req.session.user.username}`);
 
     if (!postId) {
       return res.status(400).json({ error: 'Post ID is required' });
@@ -958,8 +935,9 @@ app.put('/api/posts/:postId', async (req, res) => {
 
     console.log('Post updated successfully');
 
-    // Refresh session
-    req.session.touch();
+    // Extend session
+    req.session.cookie.expires = new Date(Date.now() + (30 * 24 * 60 * 60 * 1000));
+    req.session.save();
 
     res.json(updatedPost);
   } catch (error) {
@@ -969,16 +947,11 @@ app.put('/api/posts/:postId', async (req, res) => {
 });
 
 // Delete a post
-app.delete('/api/posts/:postId', async (req, res) => {
-  // Check authentication
-  if (!isAuthenticated(req, res)) {
-    return res.status(401).json({ error: 'Authentication required', redirect: '/login' });
-  }
-
+app.delete('/api/posts/:postId', authenticator, async (req, res) => {
   try {
     const { postId } = req.params;
 
-    console.log(`Deleting post ${postId}`);
+    console.log(`Deleting post ${postId} by ${req.session.user.username}`);
 
     if (!postId) {
       return res.status(400).json({ error: 'Post ID is required' });
@@ -1014,8 +987,9 @@ app.delete('/api/posts/:postId', async (req, res) => {
 
     console.log('Post and associated data deleted successfully');
 
-    // Refresh session
-    req.session.touch();
+    // Extend session
+    req.session.cookie.expires = new Date(Date.now() + (30 * 24 * 60 * 60 * 1000));
+    req.session.save();
 
     res.json({ success: true, message: 'Post deleted successfully' });
   } catch (error) {
